@@ -15,23 +15,26 @@
 //
 // Execute `rustlings hint errorsn` for hints :)
 
-// I AM NOT DONE
-
 use std::error;
+use std::error::Error;
 use std::fmt;
 use std::io;
+use std::num;
 
 // PositiveNonzeroInteger is a struct defined below the tests.
-fn read_and_validate(b: &mut dyn io::BufRead) -> Result<PositiveNonzeroInteger, ???> {
+fn read_and_validate(b: &mut io::BufRead) -> Result<PositiveNonzeroInteger, CreationError> {
     let mut line = String::new();
-    b.read_line(&mut line);
-    let num: i64 = line.trim().parse();
+    match b.read_line(&mut line) {
+        Ok(_) => (),
+        Err(err) => return Err(CreationError::Io(String::from(err.description()))),
+    };
+    let num: i64 = line.trim().parse()?;
     let answer = PositiveNonzeroInteger::new(num);
     answer
 }
 
 // This is a test helper function that turns a &str into a BufReader.
-fn test_with_str(s: &str) -> Result<PositiveNonzeroInteger, Box<dyn error::Error>> {
+fn test_with_str(s: &str) -> Result<PositiveNonzeroInteger, CreationError> {
     let mut b = io::BufReader::new(s.as_bytes());
     read_and_validate(&mut b)
 }
@@ -96,11 +99,13 @@ fn test_positive_nonzero_integer_creation() {
 enum CreationError {
     Negative,
     Zero,
+    Io(String),
+    Parse(num::ParseIntError),
 }
 
 impl fmt::Display for CreationError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_str((self as &dyn error::Error).description())
+        f.write_str((self as &error::Error).description())
     }
 }
 
@@ -109,6 +114,20 @@ impl error::Error for CreationError {
         match *self {
             CreationError::Negative => "Negative",
             CreationError::Zero => "Zero",
+            CreationError::Io(ref string) => &string[..],
+            CreationError::Parse(ref err) => err.description(),
         }
+    }
+}
+
+impl From<io::Error> for CreationError {
+    fn from(err: io::Error) -> CreationError {
+        CreationError::Io(err.to_string())
+    }
+}
+
+impl From<num::ParseIntError> for CreationError {
+    fn from(err: num::ParseIntError) -> CreationError {
+        CreationError::Parse(err)
     }
 }
