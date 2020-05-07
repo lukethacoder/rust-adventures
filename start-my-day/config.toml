@@ -1,0 +1,9 @@
+username = "luke"
+
+[[websites]]
+name = "forecast"
+url = "https://forecast.it"
+
+[[websites]]
+name = "github"
+url = "https://github.com"
