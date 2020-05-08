@@ -5,7 +5,6 @@ pub fn run() {
   let command = args[1].clone();
   let name = "luke";
   let status = "101%";
-  
   // println!("{:?}", args);
   // println!("{}", command);
 
