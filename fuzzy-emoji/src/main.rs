@@ -6,7 +6,7 @@ use std::path::Path;
 use std::str;
 use std::time::Instant;
 
-// use ngrammatic::{CorpusBuilder, Pad};
+use ngrammatic::{CorpusBuilder, Pad};
 
 use colored::*;
 use serde::Deserialize;
@@ -14,9 +14,9 @@ use serde::Serialize;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Emoji {
-    a: String,
-    b: String,
-    c: Vec<String>,
+    a: String,      // Human Readable Name of Emoji
+    b: String,      // UTF8 string code
+    c: Vec<String>, // Array of string related words
 }
 
 // #[derive(Serialize, Deserialize, Debug)]
@@ -48,18 +48,36 @@ fn main() {
     println!("Elapsed: {:.2?}", elapsed);
 
     let hash_keys = _deserialized_camera.keys();
-    // println!("hash_keys: {:?}", hash_keys);
-    // println!("emoji json config: {:?}", &_deserialized_camera);
 
     let key_to_get: &str = "fire";
+    let mut matched_emojis: Vec<&Emoji> = Vec::new();
 
-    // print_map(&_deserialized_camera);
-    println!("attempting to find {} in our hashmap", &key_to_get.green());
+    for k in hash_keys {
+        let mut corpus = CorpusBuilder::new().arity(2).pad_full(Pad::Auto).finish();
 
-    let get_the_opp: Option<&Emoji> = _deserialized_camera.get(key_to_get);
+        let _get_the_opp: Option<&Emoji> = _deserialized_camera.get(k);
+        let the_emoji = _get_the_opp.unwrap();
+        corpus.add_text(k);
+        corpus.add_text(&the_emoji.a.to_string());
+
+        for keyword in &the_emoji.c {
+            corpus.add_text(&keyword.to_string());
+        }
+
+        let results = corpus.search(key_to_get, 0.5);
+        let top_match = results.first();
+
+        // Check if we matched one of the values of this emoji obj
+        if top_match != None {
+            matched_emojis.push(the_emoji);
+        }
+    }
+
+    println!("--------------------");
     println!(
-        "found value where key = {}: {:?}",
-        &key_to_get.red(),
-        &get_the_opp
+        "FOUND {} MATCHING EMOJIS for search of '{}'",
+        matched_emojis.len(),
+        key_to_get
     );
+    println!("--------------------");
 }
