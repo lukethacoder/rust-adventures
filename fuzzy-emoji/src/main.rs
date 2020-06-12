@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::fs::read_to_string;
-use std::hash::Hash;
 use std::path::Path;
 use std::str;
 use std::time::Instant;
@@ -19,33 +18,19 @@ struct Emoji {
     c: Vec<String>, // Array of string related words
 }
 
-// #[derive(Serialize, Deserialize, Debug)]
-// struct EmojiAll {
-//     #[serde(flatten)]
-//     inner: HashMap<String, Emoji>,
-// }
-
 type EmojiHash = HashMap<String, Emoji>;
-
-fn print_map<K: Debug + Eq + Hash, V: Debug>(map: &HashMap<K, V>) {
-    for (k, v) in map.iter() {
-        println!("-----");
-        println!("{:?}: {:?}", k, v);
-        println!("-----");
-    }
-}
 
 fn main() {
     // Fetch the file
     let json_file_path = Path::new("emojis.json");
     let json_file_str = read_to_string(json_file_path).expect("file not found");
+
+    // Will see how long this query takes
     let start = Instant::now();
 
     // deserialise to EmojiHash
     let _deserialized_camera: EmojiHash =
         serde_json::from_str(&json_file_str).expect("error while reading json");
-    let elapsed = start.elapsed();
-    println!("Elapsed: {:.2?}", elapsed);
 
     let hash_keys = _deserialized_camera.keys();
 
@@ -73,11 +58,15 @@ fn main() {
         }
     }
 
+    let elapsed = start.elapsed();
+
     println!("--------------------");
     println!(
-        "FOUND {} MATCHING EMOJIS for search of '{}'",
+        "FOUND {} MATCHING EMOJIS for search of '{}' in {:.2?}",
         matched_emojis.len(),
-        key_to_get
+        key_to_get.green(),
+        elapsed
     );
     println!("--------------------");
+    println!("first result: {:?}", matched_emojis[0]);
 }
