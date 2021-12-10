@@ -1,25 +1,21 @@
 use std::{env,fs};
 use colored::*;
+use regex::Regex;
 
 mod schema;
 
 const PATH_VAR: &str = "HOMEPATH";
 const STATE_FOLDER: &str = ".sfdx";
 
-const CONFIG_FILES: [&str; 5] = [
-  "alias.json",
-  "key.json",
-  "sfdx-config.json",
-  "stash.json",
-  "sfdx.log"
-];
-
 fn main() {
-  println!("Running main...");
+  println!("Running main...\n");
+  // regex to check for valid json files
+  // "borrowed" from https://github.com/forcedotcom/sfdx-core/blob/552d6f2301b29f03ca9cb0cdc293c86a0e281aed/src/authInfo.ts#L319
+  let auth_file_name_regex = Regex::new(r"^[^.][^@]*@[^.]+(\.[^.\s]+)+\.json$").unwrap();
 
   let home_path = env::var(PATH_VAR).ok();
   let path_to_sfdx: &str = &format!("{}\\{}", home_path.unwrap(), STATE_FOLDER);
-  println!("{} files to check", path_to_sfdx.len());
+  println!("{} files to check\n", path_to_sfdx.len());
 
   let mut list_of_orgs: Vec<schema::Org> = vec![];
 
@@ -27,9 +23,10 @@ fn main() {
     let entry = entry_res.unwrap();
     let file_name_buf = entry.file_name();
     let file_name = file_name_buf.to_str().unwrap();
-    if !CONFIG_FILES.contains(&file_name) {
+    
+    // check valid auth file
+    if auth_file_name_regex.is_match(&file_name) {
       let path_to_file = format!("{}\\{}", path_to_sfdx, file_name);
-
       let file_contents_as_string: String = get_file(&path_to_file);
           
       // Parse the string of data into a Person object. This is exactly the
@@ -41,7 +38,7 @@ fn main() {
     }
   }
   
-  println!("Found {} orgs", list_of_orgs.len());
+  println!("\nFound {} orgs", list_of_orgs.len());
 }
 
 fn get_file(file_path: &str) -> String {
