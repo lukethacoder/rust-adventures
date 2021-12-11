@@ -1,0 +1,16 @@
+[package]
+name = "sfdx-open"
+version = "0.1.0"
+authors = ["Luke Secomb <hello@lukesecomb.digital>"]
+edition = "2018"
+
+[dependencies]
+serde_json = "1.0"
+serde = { version = "1.0", features = [ "derive" ] }
+regex = "1"
+colored = "2"
+oauth2 = "4.1"
+dotenv = "0.15.0"
+async-std = {version = "1.10.0", features = ["attributes"]}
+reqwest = { version = "0.11.4", features = ["json"] }
+rustforce = "0.2.0"
