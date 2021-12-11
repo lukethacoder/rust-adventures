@@ -1,7 +1,7 @@
 [package]
-name = "rust-playground-stuffs"
+name = "sfdx-list"
 version = "0.1.0"
-authors = ["Luke Secomb <luke.secomb@live.com>"]
+authors = ["Luke Secomb <hello@lukesecomb.digital>"]
 edition = "2018"
 
 [dependencies]
