@@ -15,7 +15,7 @@ fn main() {
 
     // Real usage
     let fm = cm
-        .load_file(Path::new("test.ts"))
+        .load_file(Path::new("test.ts")) // test.d.ts
         .expect("failed to load test.ts");
 
     // Inline string usage
