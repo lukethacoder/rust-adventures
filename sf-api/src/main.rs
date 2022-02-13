@@ -1,16 +1,15 @@
 use std::env;
-use std::collections::HashMap;
+use std::fs;
 
 use colored::*;
 use dotenv::dotenv;
 use serde::{Deserialize, Serialize};
-use http::{HeaderMap, HeaderValue, header::{}};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ErrorObject {
-    message: String,
-    #[serde(rename = "errorCode")]
-    error_code: String,
+  message: String,
+  #[serde(rename = "errorCode")]
+  error_code: String,
 }
 
 #[tokio::main]
@@ -20,6 +19,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
   let access_token = env::var("SF_ACCESS_TOKEN").ok().unwrap();
   let sf_endpoint = env::var("SF_ENDPOINT").ok().unwrap();
   let sf_api_version = env::var("SF_API_VERSION").ok().unwrap();
+  println!("Using access_token: {:?} ", access_token);
+
+  let sobject_data = get_sobject_data(access_token, sf_endpoint, sf_api_version)
+    .await?;
+  let as_string = serde_json::to_string_pretty(&sobject_data).unwrap();
+
+  fs::write("sobject.json", as_string).expect("Unable to write file");
+
+  Ok(())
+}
+
+async fn get_sobject_data(
+  access_token: String,
+  sf_endpoint: String,
+  sf_api_version: String,
+) -> Result<ResponseObject, Box<dyn std::error::Error>> {
   println!("Using access_token: {:?} ", access_token);
 
   let endpoint_url = format!(
@@ -34,7 +49,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
   let client = reqwest::Client::new();
 
-  let response = client.get(endpoint_url)
+  let response = client
+    .get(endpoint_url)
     .header("Authorization", authorization_header)
     .header("Content-Type", "application/json")
     .send()
@@ -43,15 +59,117 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
   // eprintln!("Headers: {:#?}\n", response.headers());
   println!("{}{}", "Status ".blue(), response.status().as_u16());
 
-  if response.status().as_u16() == 401 {
-    println!("{}", "http error here ".red());
-    let error_response = response.json::<Vec<ErrorObject>>().await?;
-    println!("error_response {:?}", error_response[0]);
+  // if response.status().as_u16() == 401 {
+  // println!("{}", "http error here ".red());
+  // let error_response = response.json::<Vec<ErrorObject>>().await?;
+  // println!("error_response {:?}", error_response[0]);
 
-  } else {
-    println!("{}", "success here ".green());
-    let json = response.json::<HashMap<String, String>>().await?;
-    println!("Successful Response: \n {:#?}", json);
-  }
-  Ok(())
+  //   Ok(())
+  // } else {
+  println!("{}", "success here ".green());
+  let json = response.json::<ResponseObject>().await?;
+  let json_as_string = serde_json::to_string(&json).unwrap();
+  let response_object = serde_json::from_str(&json_as_string).unwrap();
+  println!("Successful Response: \n {:#?}", response_object);
+  // }
+  Ok(response_object)
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ResponseObject {
+  encoding: String,
+  #[serde(rename = "maxBatchSize")]
+  max_batch_size: i64,
+  sobjects: Vec<SObject>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct SObject {
+  activateable: bool,
+  #[serde(rename = "associateEntityType")]
+  associate_entity_type: Option<AssociateEntityType>,
+  #[serde(rename = "associateParentEntity")]
+  associate_parent_entity: Option<String>,
+  createable: bool,
+  custom: bool,
+  #[serde(rename = "customSetting")]
+  custom_setting: bool,
+  #[serde(rename = "deepCloneable")]
+  deep_cloneable: bool,
+  deletable: bool,
+  #[serde(rename = "deprecatedAndHidden")]
+  deprecated_and_hidden: bool,
+  #[serde(rename = "feedEnabled")]
+  feed_enabled: bool,
+  #[serde(rename = "hasSubtypes")]
+  has_subtypes: bool,
+  #[serde(rename = "isInterface")]
+  is_interface: bool,
+  #[serde(rename = "isSubtype")]
+  is_subtype: bool,
+  #[serde(rename = "keyPrefix")]
+  key_prefix: Option<String>,
+  label: String,
+  #[serde(rename = "labelPlural")]
+  label_plural: String,
+  layoutable: bool,
+  mergeable: bool,
+  #[serde(rename = "mruEnabled")]
+  mru_enabled: bool,
+  name: String,
+  queryable: bool,
+  replicateable: bool,
+  retrieveable: bool,
+  searchable: bool,
+  triggerable: bool,
+  undeletable: bool,
+  updateable: bool,
+  urls: Urls,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Urls {
+  #[serde(rename = "rowTemplate")]
+  row_template: String,
+  describe: String,
+  sobject: String,
+  #[serde(rename = "eventSchema")]
+  event_schema: Option<String>,
+  layouts: Option<String>,
+  #[serde(rename = "compactLayouts")]
+  compact_layouts: Option<String>,
+  #[serde(rename = "approvalLayouts")]
+  approval_layouts: Option<String>,
+  listviews: Option<String>,
+  #[serde(rename = "quickActions")]
+  quick_actions: Option<String>,
+  #[serde(rename = "caseArticleSuggestions")]
+  case_article_suggestions: Option<String>,
+  #[serde(rename = "caseRowArticleSuggestions")]
+  case_row_article_suggestions: Option<String>,
+  #[serde(rename = "eventSeriesUpdates")]
+  event_series_updates: Option<String>,
+  push: Option<String>,
+  #[serde(rename = "namedLayouts")]
+  named_layouts: Option<String>,
+  #[serde(rename = "passwordUtilities")]
+  password_utilities: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub enum AssociateEntityType {
+  ChangeEvent,
+  Comment,
+  DataCategorySelection,
+  Feed,
+  History,
+  Share,
+  TeamMember,
+  TeamRole,
+  TeamTemplate,
+  TeamTemplateMember,
+  TeamTemplateRecord,
+  VersionHistory,
+  ViewStat,
+  VoteStat,
 }

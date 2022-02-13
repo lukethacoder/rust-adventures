@@ -1,0 +1,2 @@
+# Only in this directory, we don't want to be publishing org metadata to github here 
+*.json
