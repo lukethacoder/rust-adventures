@@ -1,0 +1,11 @@
+[package]
+name = "ts-file-reader"
+version = "0.1.0"
+edition = "2021"
+description = "Concept to read typescript files and parse them to AST"
+license = "MIT"
+
+[dependencies]
+colored = "2.0.0"
+swc_common = { version =  "0.17.5", features = [ "tty-emitter" ] }
+swc_ecma_parser = { version = "0.88.3", features = [ "typescript" ] }
