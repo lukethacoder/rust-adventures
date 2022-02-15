@@ -2,17 +2,17 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct ResponseObject {
-  count: i64,
-  results: Vec<Result>,
-  links: Links,
-  search_description: SearchDescription,
-  listing_type: String,
+  pub count: i64,
+  pub results: Vec<Result>,
+  pub links: Links,
+  pub search_description: SearchDescription,
+  pub listing_type: String,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Links {
   next: String,
-  previous: String,
+  previous: Option<serde_json::Value>,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -60,7 +60,6 @@ pub struct Result {
   address_display_string: String,
   address_street_string: String,
   images: Vec<ImageElement>,
-  agents: AgentsUnion,
   office: Office,
   url_path: String,
   category: String,
@@ -83,29 +82,9 @@ pub struct Result {
   first_go_live: String,
   has_new_price: bool,
   body_corporate_fees: String,
-  suburb_aliases: Vec<String>,
-  is_private_listing: bool,
+  suburb_aliases: Option<Vec<String>>,
+  is_private_listing: Option<bool>,
 }
-
-#[derive(Serialize, Deserialize, Clone)]
-pub struct Agent {
-  id: i64,
-  title: String,
-  name_short: String,
-  job_title: String,
-  results_image: Option<String>,
-  profile_image: Option<String>,
-  phone: String,
-  office_phone: String,
-  slug: String,
-  live: bool,
-  private_lister: bool,
-  rei_membership: Option<String>,
-  rei_member_number: Option<String>,
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-pub struct AgentsClass {}
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct ImageElement {
@@ -181,18 +160,25 @@ pub struct SearchDescription {
 }
 
 #[derive(Serialize, Deserialize, Clone)]
-#[serde(untagged)]
-pub enum AgentsUnion {
-  AgentArray(Vec<Agent>),
-  AgentsClass(AgentsClass),
-}
-
-#[derive(Serialize, Deserialize, Clone)]
 pub enum State {
-  #[serde(rename = "ACT")]
+  #[serde(rename = "ACT", alias = "Australian Capital Territory")]
   Act,
-  #[serde(rename = "NSW")]
+  #[serde(rename = "NSW", alias = "New South Wales")]
   Nsw,
+  #[serde(rename = "QLD", alias = "Queensland")]
+  Qld,
+  #[serde(rename = "VIC", alias = "Victoria")]
+  Vic,
+  #[serde(rename = "SA", alias = "South Australia")]
+  Sa,
+  #[serde(rename = "WA", alias = "Western Australia")]
+  Wa,
+  #[serde(rename = "NT", alias = "Northern Territory")]
+  Nt,
+  #[serde(rename = "TAS", alias = "Tasmania")]
+  Tas,
+  #[serde(rename = "")]
+  Empty,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -215,6 +201,12 @@ pub enum Authority {
   Exclusive,
   #[serde(rename = "sale")]
   Sale,
+  #[serde(rename = "open")]
+  Open,
+  #[serde(rename = "conjunctional")]
+  Conjunctional,
+  #[serde(rename = "multilist")]
+  Multilist,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -254,6 +246,8 @@ pub enum PropertyClass {
   Rental,
   #[serde(rename = "residential")]
   Residential,
+  #[serde(rename = "holidayRental")]
+  HolidayRental,
   #[serde(rename = "rural")]
   Rural,
 }
@@ -264,6 +258,8 @@ pub enum RentPeriod {
   Week,
   #[serde(rename = "weekly")]
   Weekly,
+  #[serde(rename = "monthly")]
+  Monthly,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
