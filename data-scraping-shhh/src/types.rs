@@ -11,8 +11,8 @@ pub struct ResponseObject {
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Links {
-  next: String,
-  previous: Option<serde_json::Value>,
+  pub next: Option<serde_json::Value>,
+  pub previous: Option<serde_json::Value>,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -35,7 +35,7 @@ pub struct Result {
   bedrooms: i64,
   bathrooms: i64,
   parking: i64,
-  price: i64,
+  price: Option<i64>,
   price_display: bool,
   #[serde(rename = "underOffer")]
   under_offer: bool,
@@ -60,6 +60,7 @@ pub struct Result {
   address_display_string: String,
   address_street_string: String,
   images: Vec<ImageElement>,
+  agents: Option<serde_json::Value>,
   office: Office,
   url_path: String,
   category: String,
@@ -189,6 +190,8 @@ pub enum AreaUnit {
   Hectare,
   #[serde(rename = "")]
   Empty,
+  #[serde(rename = "square")]
+  Square,
   #[serde(rename = "squareMeter")]
   SquareMeter,
 }
