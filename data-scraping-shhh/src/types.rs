@@ -2,17 +2,17 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct ResponseObject {
-  pub count: i64,
-  pub results: Vec<Result>,
-  pub links: Links,
-  pub search_description: SearchDescription,
-  pub listing_type: String,
+  count: i64,
+  results: Vec<Result>,
+  links: Links,
+  search_description: SearchDescription,
+  listing_type: String,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Links {
   next: String,
-  previous: Option<serde_json::Value>,
+  previous: String,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -60,7 +60,7 @@ pub struct Result {
   address_display_string: String,
   address_street_string: String,
   images: Vec<ImageElement>,
-  agents: Vec<Agent>,
+  agents: AgentsUnion,
   office: Office,
   url_path: String,
   category: String,
@@ -68,7 +68,7 @@ pub struct Result {
   inspections: Vec<Inspection>,
   #[serde(rename = "buildingDetails_energyRating")]
   building_details_energy_rating: Option<String>,
-  last_price_change: Option<String>,
+  last_price_change: Option<serde_json::Value>,
   development: Option<serde_json::Value>,
   #[serde(rename = "soldDetails_price")]
   sold_details_price: Option<serde_json::Value>,
@@ -100,9 +100,12 @@ pub struct Agent {
   slug: String,
   live: bool,
   private_lister: bool,
-  rei_membership: Option<ReiMembership>,
+  rei_membership: Option<String>,
   rei_member_number: Option<String>,
 }
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct AgentsClass {}
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct ImageElement {
@@ -111,9 +114,9 @@ pub struct ImageElement {
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct ImageImage {
-  image_320_240: String,
   image_800_600: String,
   image_1200_680: String,
+  image_320_240: String,
   image_480_270: String,
 }
 
@@ -152,7 +155,7 @@ pub struct Office {
   inspect_real_estate_id: String,
   inspect_real_estate_sale_id: String,
   inspect_real_estate_apply_id: String,
-  snug_office_id: SnugOfficeId,
+  snug_office_id: String,
   snug_apply_now_enabled: bool,
   snug_book_inspections_enabled_sale: bool,
   snug_book_inspections_enabled_rent: bool,
@@ -178,21 +181,18 @@ pub struct SearchDescription {
 }
 
 #[derive(Serialize, Deserialize, Clone)]
+#[serde(untagged)]
+pub enum AgentsUnion {
+  AgentArray(Vec<Agent>),
+  AgentsClass(AgentsClass),
+}
+
+#[derive(Serialize, Deserialize, Clone)]
 pub enum State {
   #[serde(rename = "ACT")]
   Act,
   #[serde(rename = "NSW")]
   Nsw,
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-pub enum ReiMembership {
-  #[serde(rename = "")]
-  Empty,
-  #[serde(rename = "REIACT")]
-  Reiact,
-  #[serde(rename = "REINSW")]
-  Reinsw,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -242,16 +242,6 @@ pub enum CalculatorProviderName {
   Empty,
   #[serde(rename = "Loan Market Horizon")]
   LoanMarketHorizon,
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-pub enum SnugOfficeId {
-  #[serde(rename = "AY82HEKB")]
-  Ay82Hekb,
-  #[serde(rename = "")]
-  Empty,
-  #[serde(rename = "6ILJ899W")]
-  The6Ilj899W,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
