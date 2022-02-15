@@ -1,0 +1,11 @@
+[package]
+name = "domain-patterns"
+version = "0.1.0"
+edition = "2021"
+description = "Experimenting with domain patterns"
+license = "MIT"
+
+[dependencies]
+serde = { version = "1.0.136", features = ["derive"] }
+colored = "2.0.0"
+viuer = "0.6"
