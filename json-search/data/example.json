@@ -1,0 +1,292 @@
+[
+  {
+    "id": 54093,
+    "status": "current",
+    "property_class": "residential",
+    "listing_type": "sale",
+    "created": "2022-02-15T17:01:21.918931+11:00",
+    "updated": "2022-02-15T17:02:38.343361+11:00",
+    "priceView": "Price Guide of $1,195,000",
+    "address_postcode": "2546",
+    "address_suburb": "NORTH NAROOMA",
+    "address_suburb_display": true,
+    "address_state": "NSW",
+    "address_region": "South Coast",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        150.1132116,
+        -36.2075333
+      ]
+    },
+    "headline": "The Glade ",
+    "bedrooms": 3,
+    "bathrooms": 2,
+    "parking": 2,
+    "price": 1100000,
+    "price_display": true,
+    "underOffer": false,
+    "authority": "exclusive",
+    "auction_date": null,
+    "auctionVenue": null,
+    "rent": null,
+    "rent_period": "week",
+    "dateAvailable": null,
+    "commercialRent": 0,
+    "commercialRent_period": "annual",
+    "carSpaces": 0,
+    "parkingComments": "",
+    "area": "1380.00",
+    "area_unit": "squareMeter",
+    "address_display_string": "3 Inlet Place NORTH NAROOMA, NSW 2546",
+    "address_street_string": "3 Inlet Place",
+    "images": [
+      {
+        "image": {
+          "image_800_600": "https://d2t3vhau9g43uy.cloudfront.net/media/__sized__/properties/images/3-inlet-place-north-narooma-nsw-2546-54093-image-0-20220215060123341292-crop-c0-5__0-5-800x600-70.jpg",
+          "image_1200_680": "https://d2t3vhau9g43uy.cloudfront.net/media/__sized__/properties/images/3-inlet-place-north-narooma-nsw-2546-54093-image-0-20220215060123341292-crop-c0-5__0-5-1200x680-70.jpg",
+          "image_320_240": "https://d2t3vhau9g43uy.cloudfront.net/media/__sized__/properties/images/3-inlet-place-north-narooma-nsw-2546-54093-image-0-20220215060123341292-crop-c0-5__0-5-320x240-70.jpg",
+          "image_480_270": "https://d2t3vhau9g43uy.cloudfront.net/media/__sized__/properties/images/3-inlet-place-north-narooma-nsw-2546-54093-image-0-20220215060123341292-crop-c0-5__0-5-480x270-70.jpg"
+        }
+      },
+      {
+        "image": {
+          "image_800_600": "https://d2t3vhau9g43uy.cloudfront.net/media/__sized__/properties/images/3-inlet-place-north-narooma-nsw-2546-54093-image-0-20220215060124760800-crop-c0-5__0-5-800x600-70.jpg",
+          "image_1200_680": "https://d2t3vhau9g43uy.cloudfront.net/media/__sized__/properties/images/3-inlet-place-north-narooma-nsw-2546-54093-image-0-20220215060124760800-crop-c0-5__0-5-1200x680-70.jpg",
+          "image_320_240": "https://d2t3vhau9g43uy.cloudfront.net/media/__sized__/properties/images/3-inlet-place-north-narooma-nsw-2546-54093-image-0-20220215060124760800-crop-c0-5__0-5-320x240-70.jpg",
+          "image_480_270": "https://d2t3vhau9g43uy.cloudfront.net/media/__sized__/properties/images/3-inlet-place-north-narooma-nsw-2546-54093-image-0-20220215060124760800-crop-c0-5__0-5-480x270-70.jpg"
+        }
+      },
+      {
+        "image": {
+          "image_800_600": "https://d2t3vhau9g43uy.cloudfront.net/media/__sized__/properties/images/3-inlet-place-north-narooma-nsw-2546-54093-image-0-20220215060125928976-crop-c0-5__0-5-800x600-70.jpg",
+          "image_1200_680": "https://d2t3vhau9g43uy.cloudfront.net/media/__sized__/properties/images/3-inlet-place-north-narooma-nsw-2546-54093-image-0-20220215060125928976-crop-c0-5__0-5-1200x680-70.jpg",
+          "image_320_240": "https://d2t3vhau9g43uy.cloudfront.net/media/__sized__/properties/images/3-inlet-place-north-narooma-nsw-2546-54093-image-0-20220215060125928976-crop-c0-5__0-5-320x240-70.jpg",
+          "image_480_270": "https://d2t3vhau9g43uy.cloudfront.net/media/__sized__/properties/images/3-inlet-place-north-narooma-nsw-2546-54093-image-0-20220215060125928976-crop-c0-5__0-5-480x270-70.jpg"
+        }
+      }
+    ],
+    "agents": [
+      {
+        "id": 3216,
+        "job_title": "",
+        "live": true,
+        "name_short": "",
+        "office_phone": "",
+        "phone": "",
+        "private_lister": false,
+        "profile_image": null,
+        "rei_member_number": null,
+        "rei_membership": null,
+        "results_image": null,
+        "slug": "john-murray",
+        "title": "John Murray"
+      }
+    ],
+    "office": {
+      "title": "Whale Coast Realty",
+      "office_name": "Whale Coast Realty",
+      "logo": "https://zango.com.au/cms-images/hp4tvd3-cNCl7vUSCsU2_c5GXts=/132837/width-230/",
+      "logo_medium": "https://zango.com.au/cms-images/teACC4HX-wMzGzLFakytJyX1i2E=/132837/width-600/",
+      "branding_colour": "",
+      "branding_font_colour": "",
+      "slug": "whale-coast-realty",
+      "address": "34 Princes Hwy",
+      "suburb": "Narooma",
+      "postcode": "2546",
+      "state": "NSW",
+      "id": 3196,
+      "show_1form": false,
+      "show_1form_url": null,
+      "sorted_services_id": "",
+      "inspect_real_estate_id": "",
+      "inspect_real_estate_sale_id": "",
+      "inspect_real_estate_apply_id": "",
+      "snug_office_id": "",
+      "snug_apply_now_enabled": false,
+      "snug_book_inspections_enabled_sale": false,
+      "snug_book_inspections_enabled_rent": false,
+      "payment_terms": 0,
+      "calculator_provider_name": "",
+      "calculator_provider_image": null,
+      "calculator_provider_url": "",
+      "phone": "(02) 4476 2699",
+      "live": true,
+      "website_url": "https://www.whalecoastrealty.com.au/",
+      "facebook_url": "",
+      "linkedin_url": "",
+      "instagram_url": "",
+      "twitter_url": "",
+      "youtube_url": ""
+    },
+    "url_path": "/sale/3-inlet-place-north-narooma-nsw-2546-54093/",
+    "category": "House",
+    "slug": "3-inlet-place-north-narooma-nsw-2546",
+    "inspections": [],
+    "buildingDetails_energyRating": null,
+    "last_price_change": null,
+    "development": null,
+    "soldDetails_price": null,
+    "soldDetails_date": null,
+    "leasedDetails_price": null,
+    "stamp_duty": "45801.94",
+    "development_show_full_result": false,
+    "has_live_auction": false,
+    "has_virtual_tour": false,
+    "first_go_live": "2022-02-15T17:02:38.323098+11:00",
+    "has_new_price": false,
+    "body_corporate_fees": "",
+    "suburb_aliases": [
+      "North Narooma"
+    ],
+    "is_private_listing": false
+  },
+  {
+    "id": 54092,
+    "status": "current",
+    "property_class": "residential",
+    "listing_type": "sale",
+    "created": "2022-02-15T17:01:21.719729+11:00",
+    "updated": "2022-02-15T17:02:16.486526+11:00",
+    "priceView": "Auction 12th Mar at 12:00pm",
+    "address_postcode": "2904",
+    "address_suburb": "FADDEN",
+    "address_suburb_display": true,
+    "address_state": "ACT",
+    "address_region": "Tuggeranong",
+    "location": {
+      "type": "Point",
+      "coordinates": [
+        149.1209265,
+        -35.4074832
+      ]
+    },
+    "headline": "Elevated with outstanding views",
+    "bedrooms": 4,
+    "bathrooms": 2,
+    "parking": 4,
+    "price": 1000000,
+    "price_display": true,
+    "underOffer": false,
+    "authority": "auction",
+    "auction_date": "2022-03-12T12:00:00+11:00",
+    "auctionVenue": null,
+    "rent": null,
+    "rent_period": "week",
+    "dateAvailable": null,
+    "commercialRent": 0,
+    "commercialRent_period": "annual",
+    "carSpaces": 0,
+    "parkingComments": "",
+    "area": "897.00",
+    "area_unit": "squareMeter",
+    "address_display_string": "204 Bugden Avenue FADDEN, ACT 2904",
+    "address_street_string": "204 Bugden Avenue",
+    "images": [
+      {
+        "image": {
+          "image_800_600": "https://d2t3vhau9g43uy.cloudfront.net/media/__sized__/properties/images/204-bugden-avenue-fadden-act-2904-54092-image-0-20220215060121939971-crop-c0-5__0-5-800x600-70.jpg",
+          "image_1200_680": "https://d2t3vhau9g43uy.cloudfront.net/media/__sized__/properties/images/204-bugden-avenue-fadden-act-2904-54092-image-0-20220215060121939971-crop-c0-5__0-5-1200x680-70.jpg",
+          "image_320_240": "https://d2t3vhau9g43uy.cloudfront.net/media/__sized__/properties/images/204-bugden-avenue-fadden-act-2904-54092-image-0-20220215060121939971-crop-c0-5__0-5-320x240-70.jpg",
+          "image_480_270": "https://d2t3vhau9g43uy.cloudfront.net/media/__sized__/properties/images/204-bugden-avenue-fadden-act-2904-54092-image-0-20220215060121939971-crop-c0-5__0-5-480x270-70.jpg"
+        }
+      },
+      {
+        "image": {
+          "image_800_600": "https://d2t3vhau9g43uy.cloudfront.net/media/__sized__/properties/images/204-bugden-avenue-fadden-act-2904-54092-image-0-20220215060122343872-crop-c0-5__0-5-800x600-70.jpg",
+          "image_1200_680": "https://d2t3vhau9g43uy.cloudfront.net/media/__sized__/properties/images/204-bugden-avenue-fadden-act-2904-54092-image-0-20220215060122343872-crop-c0-5__0-5-1200x680-70.jpg",
+          "image_320_240": "https://d2t3vhau9g43uy.cloudfront.net/media/__sized__/properties/images/204-bugden-avenue-fadden-act-2904-54092-image-0-20220215060122343872-crop-c0-5__0-5-320x240-70.jpg",
+          "image_480_270": "https://d2t3vhau9g43uy.cloudfront.net/media/__sized__/properties/images/204-bugden-avenue-fadden-act-2904-54092-image-0-20220215060122343872-crop-c0-5__0-5-480x270-70.jpg"
+        }
+      },
+      {
+        "image": {
+          "image_800_600": "https://d2t3vhau9g43uy.cloudfront.net/media/__sized__/properties/images/204-bugden-avenue-fadden-act-2904-54092-image-0-20220215060122688965-crop-c0-5__0-5-800x600-70.jpg",
+          "image_1200_680": "https://d2t3vhau9g43uy.cloudfront.net/media/__sized__/properties/images/204-bugden-avenue-fadden-act-2904-54092-image-0-20220215060122688965-crop-c0-5__0-5-1200x680-70.jpg",
+          "image_320_240": "https://d2t3vhau9g43uy.cloudfront.net/media/__sized__/properties/images/204-bugden-avenue-fadden-act-2904-54092-image-0-20220215060122688965-crop-c0-5__0-5-320x240-70.jpg",
+          "image_480_270": "https://d2t3vhau9g43uy.cloudfront.net/media/__sized__/properties/images/204-bugden-avenue-fadden-act-2904-54092-image-0-20220215060122688965-crop-c0-5__0-5-480x270-70.jpg"
+        }
+      }
+    ],
+    "agents": [
+      {
+        "id": 3058,
+        "job_title": "Licensed ACT & NSW Real Estate Agent & Auctioneer",
+        "live": true,
+        "name_short": "",
+        "office_phone": "02 6189 0100",
+        "phone": "0412 773 938",
+        "private_lister": false,
+        "profile_image": "https://zango.com.au/cms-images/wYaOYaut63NNov0AfLSKWRxSjL8=/132453/original/",
+        "rei_member_number": "",
+        "rei_membership": null,
+        "results_image": "https://zango.com.au/cms-images/z8XzjPzBvCfSYvzVcb4hk2dNptM=/132453/fill-150x176/",
+        "slug": "dan-cooper-3",
+        "title": "Dan Cooper"
+      }
+    ],
+    "office": {
+      "title": "LJ Hooker Tuggeranong",
+      "office_name": "LJ Hooker Tuggeranong",
+      "logo": "https://zango.com.au/cms-images/rVwZAmyiBT8ybEd_GqyIywAR4aI=/1955/width-230/",
+      "logo_medium": "https://zango.com.au/cms-images/9GYoabz2ncwwoUL5ywqsmiG55_c=/1955/width-600/",
+      "branding_colour": "#FFFFFF",
+      "branding_font_colour": "#000000",
+      "slug": "lj-hooker-tuggeranong",
+      "address": "Suite 1, 1st Floor South Point Shopping Centre",
+      "suburb": "Greenway",
+      "postcode": "2900",
+      "state": "ACT",
+      "id": 435,
+      "show_1form": false,
+      "show_1form_url": null,
+      "sorted_services_id": "",
+      "inspect_real_estate_id": "LJHTuggeranong",
+      "inspect_real_estate_sale_id": "LJHTuggeranong",
+      "inspect_real_estate_apply_id": "LJHTuggeranong",
+      "snug_office_id": "",
+      "snug_apply_now_enabled": false,
+      "snug_book_inspections_enabled_sale": false,
+      "snug_book_inspections_enabled_rent": false,
+      "payment_terms": 0,
+      "calculator_provider_name": "",
+      "calculator_provider_image": null,
+      "calculator_provider_url": "",
+      "phone": "02 6189 0100",
+      "live": true,
+      "website_url": "https://tuggeranong.ljhooker.com.au/",
+      "facebook_url": "https://www.facebook.com/ljhookertuggeranong1",
+      "linkedin_url": "",
+      "instagram_url": "",
+      "twitter_url": "",
+      "youtube_url": "https://www.youtube.com/channel/UCvG8WbwU9Td0ke-rP1waGPg"
+    },
+    "url_path": "/sale/204-bugden-avenue-fadden-act-2904-54092/",
+    "category": "House",
+    "slug": "204-bugden-avenue-fadden-act-2904",
+    "inspections": [
+      {
+        "inspection_time": "2022-02-19T14:00:00+11:00",
+        "inspection_end_time": "2022-02-19T14:30:00+11:00"
+      }
+    ],
+    "buildingDetails_energyRating": "4.50",
+    "last_price_change": null,
+    "development": null,
+    "soldDetails_price": null,
+    "soldDetails_date": null,
+    "leasedDetails_price": null,
+    "stamp_duty": null,
+    "development_show_full_result": false,
+    "has_live_auction": false,
+    "has_virtual_tour": true,
+    "first_go_live": "2022-02-15T17:02:16.462438+11:00",
+    "has_new_price": false,
+    "body_corporate_fees": "",
+    "suburb_aliases": [
+      "Fadden Hills",
+      "Fadden"
+    ],
+    "is_private_listing": false
+  }
+]
