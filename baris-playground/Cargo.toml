@@ -10,4 +10,4 @@ dotenv = "0.15.0"
 tokio = { version = "1", features = ["full"] }
 serde = { version = "1.0.136", features = ["derive"] }
 colored = "2.0.0"
-baris = { version = "0.1.0", path = "./baris" }
+# baris = { version = "0.1.0", path = "./baris" }
