@@ -1,0 +1,2418 @@
+[
+  {
+    "id": 1,
+    "name": "bulbasaur",
+    "dex": 153,
+    "height": 7,
+    "weight": 69,
+    "hp": 45,
+    "attack": 49,
+    "defense": 49,
+    "types": ["grass", "poison"],
+    "images": {
+      "back_default": "/back/1.png",
+      "front_default": "/1.png",
+      "official": "/other/official-artwork/1.png"
+    }
+  },
+  {
+    "id": 2,
+    "name": "ivysaur",
+    "dex": 9,
+    "height": 10,
+    "weight": 130,
+    "hp": 60,
+    "attack": 62,
+    "defense": 63,
+    "types": ["grass", "poison"],
+    "images": {
+      "back_default": "/back/2.png",
+      "front_default": "/2.png",
+      "official": "/other/official-artwork/2.png"
+    }
+  },
+  {
+    "id": 3,
+    "name": "venusaur",
+    "dex": 154,
+    "height": 20,
+    "weight": 1000,
+    "hp": 80,
+    "attack": 82,
+    "defense": 83,
+    "types": ["grass", "poison"],
+    "images": {
+      "back_default": "/back/3.png",
+      "front_default": "/3.png",
+      "official": "/other/official-artwork/3.png"
+    }
+  },
+  {
+    "id": 4,
+    "name": "charmander",
+    "dex": 176,
+    "height": 6,
+    "weight": 85,
+    "hp": 39,
+    "attack": 52,
+    "defense": 43,
+    "types": ["fire"],
+    "images": {
+      "back_default": "/back/4.png",
+      "front_default": "/4.png",
+      "official": "/other/official-artwork/4.png"
+    }
+  },
+  {
+    "id": 5,
+    "name": "charmeleon",
+    "dex": 178,
+    "height": 11,
+    "weight": 190,
+    "hp": 58,
+    "attack": 64,
+    "defense": 58,
+    "types": ["fire"],
+    "images": {
+      "back_default": "/back/5.png",
+      "front_default": "/5.png",
+      "official": "/other/official-artwork/5.png"
+    }
+  },
+  {
+    "id": 6,
+    "name": "charizard",
+    "dex": 180,
+    "height": 17,
+    "weight": 905,
+    "hp": 78,
+    "attack": 84,
+    "defense": 78,
+    "types": ["fire", "flying"],
+    "images": {
+      "back_default": "/back/6.png",
+      "front_default": "/6.png",
+      "official": "/other/official-artwork/6.png"
+    }
+  },
+  {
+    "id": 7,
+    "name": "squirtle",
+    "dex": 177,
+    "height": 5,
+    "weight": 90,
+    "hp": 44,
+    "attack": 48,
+    "defense": 65,
+    "types": ["water"],
+    "images": {
+      "back_default": "/back/7.png",
+      "front_default": "/7.png",
+      "official": "/other/official-artwork/7.png"
+    }
+  },
+  {
+    "id": 8,
+    "name": "wartortle",
+    "dex": 179,
+    "height": 10,
+    "weight": 225,
+    "hp": 59,
+    "attack": 63,
+    "defense": 80,
+    "types": ["water"],
+    "images": {
+      "back_default": "/back/8.png",
+      "front_default": "/8.png",
+      "official": "/other/official-artwork/8.png"
+    }
+  },
+  {
+    "id": 9,
+    "name": "blastoise",
+    "dex": 28,
+    "height": 16,
+    "weight": 855,
+    "hp": 79,
+    "attack": 83,
+    "defense": 100,
+    "types": ["water"],
+    "images": {
+      "back_default": "/back/9.png",
+      "front_default": "/9.png",
+      "official": "/other/official-artwork/9.png"
+    }
+  },
+  {
+    "id": 10,
+    "name": "caterpie",
+    "dex": 123,
+    "height": 3,
+    "weight": 29,
+    "hp": 45,
+    "attack": 30,
+    "defense": 35,
+    "types": ["bug"],
+    "images": {
+      "back_default": "/back/10.png",
+      "front_default": "/10.png",
+      "official": "/other/official-artwork/10.png"
+    }
+  },
+  {
+    "id": 11,
+    "name": "metapod",
+    "dex": 124,
+    "height": 7,
+    "weight": 99,
+    "hp": 50,
+    "attack": 20,
+    "defense": 55,
+    "types": ["bug"],
+    "images": {
+      "back_default": "/back/11.png",
+      "front_default": "/11.png",
+      "official": "/other/official-artwork/11.png"
+    }
+  },
+  {
+    "id": 12,
+    "name": "butterfree",
+    "dex": 125,
+    "height": 11,
+    "weight": 320,
+    "hp": 60,
+    "attack": 45,
+    "defense": 50,
+    "types": ["bug", "flying"],
+    "images": {
+      "back_default": "/back/12.png",
+      "front_default": "/12.png",
+      "official": "/other/official-artwork/12.png"
+    }
+  },
+  {
+    "id": 13,
+    "name": "weedle",
+    "dex": 112,
+    "height": 3,
+    "weight": 32,
+    "hp": 40,
+    "attack": 35,
+    "defense": 30,
+    "types": ["bug", "poison"],
+    "images": {
+      "back_default": "/back/13.png",
+      "front_default": "/13.png",
+      "official": "/other/official-artwork/13.png"
+    }
+  },
+  {
+    "id": 14,
+    "name": "kakuna",
+    "dex": 113,
+    "height": 6,
+    "weight": 100,
+    "hp": 45,
+    "attack": 25,
+    "defense": 50,
+    "types": ["bug", "poison"],
+    "images": {
+      "back_default": "/back/14.png",
+      "front_default": "/14.png",
+      "official": "/other/official-artwork/14.png"
+    }
+  },
+  {
+    "id": 15,
+    "name": "beedrill",
+    "dex": 114,
+    "height": 10,
+    "weight": 295,
+    "hp": 65,
+    "attack": 90,
+    "defense": 40,
+    "types": ["bug", "poison"],
+    "images": {
+      "back_default": "/back/15.png",
+      "front_default": "/15.png",
+      "official": "/other/official-artwork/15.png"
+    }
+  },
+  {
+    "id": 16,
+    "name": "pidgey",
+    "dex": 36,
+    "height": 3,
+    "weight": 18,
+    "hp": 40,
+    "attack": 45,
+    "defense": 40,
+    "types": ["normal", "flying"],
+    "images": {
+      "back_default": "/back/16.png",
+      "front_default": "/16.png",
+      "official": "/other/official-artwork/16.png"
+    }
+  },
+  {
+    "id": 17,
+    "name": "pidgeotto",
+    "dex": 150,
+    "height": 11,
+    "weight": 300,
+    "hp": 63,
+    "attack": 60,
+    "defense": 55,
+    "types": ["normal", "flying"],
+    "images": {
+      "back_default": "/back/17.png",
+      "front_default": "/17.png",
+      "official": "/other/official-artwork/17.png"
+    }
+  },
+  {
+    "id": 18,
+    "name": "pidgeot",
+    "dex": 151,
+    "height": 15,
+    "weight": 395,
+    "hp": 83,
+    "attack": 80,
+    "defense": 75,
+    "types": ["normal", "flying"],
+    "images": {
+      "back_default": "/back/18.png",
+      "front_default": "/18.png",
+      "official": "/other/official-artwork/18.png"
+    }
+  },
+  {
+    "id": 19,
+    "name": "rattata",
+    "dex": 165,
+    "height": 3,
+    "weight": 35,
+    "hp": 30,
+    "attack": 56,
+    "defense": 35,
+    "types": ["normal"],
+    "images": {
+      "back_default": "/back/19.png",
+      "front_default": "/19.png",
+      "official": "/other/official-artwork/19.png"
+    }
+  },
+  {
+    "id": 20,
+    "name": "raticate",
+    "dex": 166,
+    "height": 7,
+    "weight": 185,
+    "hp": 55,
+    "attack": 81,
+    "defense": 60,
+    "types": ["normal"],
+    "images": {
+      "back_default": "/back/20.png",
+      "front_default": "/20.png",
+      "official": "/other/official-artwork/20.png"
+    }
+  },
+  {
+    "id": 21,
+    "name": "spearow",
+    "dex": 5,
+    "height": 3,
+    "weight": 20,
+    "hp": 40,
+    "attack": 60,
+    "defense": 30,
+    "types": ["normal", "flying"],
+    "images": {
+      "back_default": "/back/21.png",
+      "front_default": "/21.png",
+      "official": "/other/official-artwork/21.png"
+    }
+  },
+  {
+    "id": 22,
+    "name": "fearow",
+    "dex": 35,
+    "height": 12,
+    "weight": 380,
+    "hp": 65,
+    "attack": 90,
+    "defense": 65,
+    "types": ["normal", "flying"],
+    "images": {
+      "back_default": "/back/22.png",
+      "front_default": "/22.png",
+      "official": "/other/official-artwork/22.png"
+    }
+  },
+  {
+    "id": 23,
+    "name": "ekans",
+    "dex": 108,
+    "height": 20,
+    "weight": 69,
+    "hp": 35,
+    "attack": 60,
+    "defense": 44,
+    "types": ["poison"],
+    "images": {
+      "back_default": "/back/23.png",
+      "front_default": "/23.png",
+      "official": "/other/official-artwork/23.png"
+    }
+  },
+  {
+    "id": 24,
+    "name": "arbok",
+    "dex": 45,
+    "height": 35,
+    "weight": 650,
+    "hp": 60,
+    "attack": 95,
+    "defense": 69,
+    "types": ["poison"],
+    "images": {
+      "back_default": "/back/24.png",
+      "front_default": "/24.png",
+      "official": "/other/official-artwork/24.png"
+    }
+  },
+  {
+    "id": 25,
+    "name": "pikachu",
+    "dex": 84,
+    "height": 4,
+    "weight": 60,
+    "hp": 35,
+    "attack": 55,
+    "defense": 40,
+    "types": ["electric"],
+    "images": {
+      "back_default": "/back/25.png",
+      "front_default": "/25.png",
+      "official": "/other/official-artwork/25.png"
+    }
+  },
+  {
+    "id": 26,
+    "name": "raichu",
+    "dex": 85,
+    "height": 8,
+    "weight": 300,
+    "hp": 60,
+    "attack": 90,
+    "defense": 55,
+    "types": ["electric"],
+    "images": {
+      "back_default": "/back/26.png",
+      "front_default": "/26.png",
+      "official": "/other/official-artwork/26.png"
+    }
+  },
+  {
+    "id": 27,
+    "name": "sandshrew",
+    "dex": 96,
+    "height": 6,
+    "weight": 120,
+    "hp": 50,
+    "attack": 75,
+    "defense": 85,
+    "types": ["ground"],
+    "images": {
+      "back_default": "/back/27.png",
+      "front_default": "/27.png",
+      "official": "/other/official-artwork/27.png"
+    }
+  },
+  {
+    "id": 28,
+    "name": "sandslash",
+    "dex": 97,
+    "height": 10,
+    "weight": 295,
+    "hp": 75,
+    "attack": 100,
+    "defense": 110,
+    "types": ["ground"],
+    "images": {
+      "back_default": "/back/28.png",
+      "front_default": "/28.png",
+      "official": "/other/official-artwork/28.png"
+    }
+  },
+  {
+    "id": 29,
+    "name": "nidoran-f",
+    "dex": 15,
+    "height": 4,
+    "weight": 70,
+    "hp": 55,
+    "attack": 47,
+    "defense": 52,
+    "types": ["poison"],
+    "images": {
+      "back_default": "/back/29.png",
+      "front_default": "/29.png",
+      "official": "/other/official-artwork/29.png"
+    }
+  },
+  {
+    "id": 30,
+    "name": "nidorina",
+    "dex": 168,
+    "height": 8,
+    "weight": 200,
+    "hp": 70,
+    "attack": 62,
+    "defense": 67,
+    "types": ["poison"],
+    "images": {
+      "back_default": "/back/30.png",
+      "front_default": "/30.png",
+      "official": "/other/official-artwork/30.png"
+    }
+  },
+  {
+    "id": 31,
+    "name": "nidoqueen",
+    "dex": 16,
+    "height": 13,
+    "weight": 600,
+    "hp": 90,
+    "attack": 92,
+    "defense": 87,
+    "types": ["poison", "ground"],
+    "images": {
+      "back_default": "/back/31.png",
+      "front_default": "/31.png",
+      "official": "/other/official-artwork/31.png"
+    }
+  },
+  {
+    "id": 32,
+    "name": "nidoran-m",
+    "dex": 3,
+    "height": 5,
+    "weight": 90,
+    "hp": 46,
+    "attack": 57,
+    "defense": 40,
+    "types": ["poison"],
+    "images": {
+      "back_default": "/back/32.png",
+      "front_default": "/32.png",
+      "official": "/other/official-artwork/32.png"
+    }
+  },
+  {
+    "id": 33,
+    "name": "nidorino",
+    "dex": 167,
+    "height": 9,
+    "weight": 195,
+    "hp": 61,
+    "attack": 72,
+    "defense": 57,
+    "types": ["poison"],
+    "images": {
+      "back_default": "/back/33.png",
+      "front_default": "/33.png",
+      "official": "/other/official-artwork/33.png"
+    }
+  },
+  {
+    "id": 34,
+    "name": "nidoking",
+    "dex": 7,
+    "height": 14,
+    "weight": 620,
+    "hp": 81,
+    "attack": 102,
+    "defense": 77,
+    "types": ["poison", "ground"],
+    "images": {
+      "back_default": "/back/34.png",
+      "front_default": "/34.png",
+      "official": "/other/official-artwork/34.png"
+    }
+  },
+  {
+    "id": 35,
+    "name": "clefairy",
+    "dex": 4,
+    "height": 6,
+    "weight": 75,
+    "hp": 70,
+    "attack": 45,
+    "defense": 48,
+    "types": ["fairy"],
+    "images": {
+      "back_default": "/back/35.png",
+      "front_default": "/35.png",
+      "official": "/other/official-artwork/35.png"
+    }
+  },
+  {
+    "id": 36,
+    "name": "clefable",
+    "dex": 142,
+    "height": 13,
+    "weight": 400,
+    "hp": 95,
+    "attack": 70,
+    "defense": 73,
+    "types": ["fairy"],
+    "images": {
+      "back_default": "/back/36.png",
+      "front_default": "/36.png",
+      "official": "/other/official-artwork/36.png"
+    }
+  },
+  {
+    "id": 37,
+    "name": "vulpix",
+    "dex": 82,
+    "height": 6,
+    "weight": 99,
+    "hp": 38,
+    "attack": 41,
+    "defense": 40,
+    "types": ["fire"],
+    "images": {
+      "back_default": "/back/37.png",
+      "front_default": "/37.png",
+      "official": "/other/official-artwork/37.png"
+    }
+  },
+  {
+    "id": 38,
+    "name": "ninetales",
+    "dex": 83,
+    "height": 11,
+    "weight": 199,
+    "hp": 73,
+    "attack": 76,
+    "defense": 75,
+    "types": ["fire"],
+    "images": {
+      "back_default": "/back/38.png",
+      "front_default": "/38.png",
+      "official": "/other/official-artwork/38.png"
+    }
+  },
+  {
+    "id": 39,
+    "name": "jigglypuff",
+    "dex": 100,
+    "height": 5,
+    "weight": 55,
+    "hp": 115,
+    "attack": 45,
+    "defense": 20,
+    "types": ["normal", "fairy"],
+    "images": {
+      "back_default": "/back/39.png",
+      "front_default": "/39.png",
+      "official": "/other/official-artwork/39.png"
+    }
+  },
+  {
+    "id": 40,
+    "name": "wigglytuff",
+    "dex": 101,
+    "height": 10,
+    "weight": 120,
+    "hp": 140,
+    "attack": 70,
+    "defense": 45,
+    "types": ["normal", "fairy"],
+    "images": {
+      "back_default": "/back/40.png",
+      "front_default": "/40.png",
+      "official": "/other/official-artwork/40.png"
+    }
+  },
+  {
+    "id": 41,
+    "name": "zubat",
+    "dex": 107,
+    "height": 8,
+    "weight": 75,
+    "hp": 40,
+    "attack": 45,
+    "defense": 35,
+    "types": ["poison", "flying"],
+    "images": {
+      "back_default": "/back/41.png",
+      "front_default": "/41.png",
+      "official": "/other/official-artwork/41.png"
+    }
+  },
+  {
+    "id": 42,
+    "name": "golbat",
+    "dex": 130,
+    "height": 16,
+    "weight": 550,
+    "hp": 75,
+    "attack": 80,
+    "defense": 70,
+    "types": ["poison", "flying"],
+    "images": {
+      "back_default": "/back/42.png",
+      "front_default": "/42.png",
+      "official": "/other/official-artwork/42.png"
+    }
+  },
+  {
+    "id": 43,
+    "name": "oddish",
+    "dex": 185,
+    "height": 5,
+    "weight": 54,
+    "hp": 45,
+    "attack": 50,
+    "defense": 55,
+    "types": ["grass", "poison"],
+    "images": {
+      "back_default": "/back/43.png",
+      "front_default": "/43.png",
+      "official": "/other/official-artwork/43.png"
+    }
+  },
+  {
+    "id": 44,
+    "name": "gloom",
+    "dex": 186,
+    "height": 8,
+    "weight": 86,
+    "hp": 60,
+    "attack": 65,
+    "defense": 70,
+    "types": ["grass", "poison"],
+    "images": {
+      "back_default": "/back/44.png",
+      "front_default": "/44.png",
+      "official": "/other/official-artwork/44.png"
+    }
+  },
+  {
+    "id": 45,
+    "name": "vileplume",
+    "dex": 187,
+    "height": 12,
+    "weight": 186,
+    "hp": 75,
+    "attack": 80,
+    "defense": 85,
+    "types": ["grass", "poison"],
+    "images": {
+      "back_default": "/back/45.png",
+      "front_default": "/45.png",
+      "official": "/other/official-artwork/45.png"
+    }
+  },
+  {
+    "id": 46,
+    "name": "paras",
+    "dex": 109,
+    "height": 3,
+    "weight": 54,
+    "hp": 35,
+    "attack": 70,
+    "defense": 55,
+    "types": ["bug", "grass"],
+    "images": {
+      "back_default": "/back/46.png",
+      "front_default": "/46.png",
+      "official": "/other/official-artwork/46.png"
+    }
+  },
+  {
+    "id": 47,
+    "name": "parasect",
+    "dex": 46,
+    "height": 10,
+    "weight": 295,
+    "hp": 60,
+    "attack": 95,
+    "defense": 80,
+    "types": ["bug", "grass"],
+    "images": {
+      "back_default": "/back/47.png",
+      "front_default": "/47.png",
+      "official": "/other/official-artwork/47.png"
+    }
+  },
+  {
+    "id": 48,
+    "name": "venonat",
+    "dex": 65,
+    "height": 10,
+    "weight": 300,
+    "hp": 60,
+    "attack": 55,
+    "defense": 50,
+    "types": ["bug", "poison"],
+    "images": {
+      "back_default": "/back/48.png",
+      "front_default": "/48.png",
+      "official": "/other/official-artwork/48.png"
+    }
+  },
+  {
+    "id": 49,
+    "name": "venomoth",
+    "dex": 119,
+    "height": 15,
+    "weight": 125,
+    "hp": 70,
+    "attack": 65,
+    "defense": 60,
+    "types": ["bug", "poison"],
+    "images": {
+      "back_default": "/back/49.png",
+      "front_default": "/49.png",
+      "official": "/other/official-artwork/49.png"
+    }
+  },
+  {
+    "id": 50,
+    "name": "diglett",
+    "dex": 59,
+    "height": 2,
+    "weight": 8,
+    "hp": 10,
+    "attack": 55,
+    "defense": 25,
+    "types": ["ground"],
+    "images": {
+      "back_default": "/back/50.png",
+      "front_default": "/50.png",
+      "official": "/other/official-artwork/50.png"
+    }
+  },
+  {
+    "id": 51,
+    "name": "dugtrio",
+    "dex": 118,
+    "height": 7,
+    "weight": 333,
+    "hp": 35,
+    "attack": 100,
+    "defense": 50,
+    "types": ["ground"],
+    "images": {
+      "back_default": "/back/51.png",
+      "front_default": "/51.png",
+      "official": "/other/official-artwork/51.png"
+    }
+  },
+  {
+    "id": 52,
+    "name": "meowth",
+    "dex": 77,
+    "height": 4,
+    "weight": 42,
+    "hp": 40,
+    "attack": 45,
+    "defense": 35,
+    "types": ["normal"],
+    "images": {
+      "back_default": "/back/52.png",
+      "front_default": "/52.png",
+      "official": "/other/official-artwork/52.png"
+    }
+  },
+  {
+    "id": 53,
+    "name": "persian",
+    "dex": 144,
+    "height": 10,
+    "weight": 320,
+    "hp": 65,
+    "attack": 70,
+    "defense": 60,
+    "types": ["normal"],
+    "images": {
+      "back_default": "/back/53.png",
+      "front_default": "/53.png",
+      "official": "/other/official-artwork/53.png"
+    }
+  },
+  {
+    "id": 54,
+    "name": "psyduck",
+    "dex": 47,
+    "height": 8,
+    "weight": 196,
+    "hp": 50,
+    "attack": 52,
+    "defense": 48,
+    "types": ["water"],
+    "images": {
+      "back_default": "/back/54.png",
+      "front_default": "/54.png",
+      "official": "/other/official-artwork/54.png"
+    }
+  },
+  {
+    "id": 55,
+    "name": "golduck",
+    "dex": 128,
+    "height": 17,
+    "weight": 766,
+    "hp": 80,
+    "attack": 82,
+    "defense": 78,
+    "types": ["water"],
+    "images": {
+      "back_default": "/back/55.png",
+      "front_default": "/55.png",
+      "official": "/other/official-artwork/55.png"
+    }
+  },
+  {
+    "id": 56,
+    "name": "mankey",
+    "dex": 57,
+    "height": 5,
+    "weight": 280,
+    "hp": 40,
+    "attack": 80,
+    "defense": 35,
+    "types": ["fighting"],
+    "images": {
+      "back_default": "/back/56.png",
+      "front_default": "/56.png",
+      "official": "/other/official-artwork/56.png"
+    }
+  },
+  {
+    "id": 57,
+    "name": "primeape",
+    "dex": 117,
+    "height": 10,
+    "weight": 320,
+    "hp": 65,
+    "attack": 105,
+    "defense": 60,
+    "types": ["fighting"],
+    "images": {
+      "back_default": "/back/57.png",
+      "front_default": "/57.png",
+      "official": "/other/official-artwork/57.png"
+    }
+  },
+  {
+    "id": 58,
+    "name": "growlithe",
+    "dex": 33,
+    "height": 7,
+    "weight": 190,
+    "hp": 55,
+    "attack": 70,
+    "defense": 45,
+    "types": ["fire"],
+    "images": {
+      "back_default": "/back/58.png",
+      "front_default": "/58.png",
+      "official": "/other/official-artwork/58.png"
+    }
+  },
+  {
+    "id": 59,
+    "name": "arcanine",
+    "dex": 20,
+    "height": 19,
+    "weight": 1550,
+    "hp": 90,
+    "attack": 110,
+    "defense": 80,
+    "types": ["fire"],
+    "images": {
+      "back_default": "/back/59.png",
+      "front_default": "/59.png",
+      "official": "/other/official-artwork/59.png"
+    }
+  },
+  {
+    "id": 60,
+    "name": "poliwag",
+    "dex": 71,
+    "height": 6,
+    "weight": 124,
+    "hp": 40,
+    "attack": 50,
+    "defense": 40,
+    "types": ["water"],
+    "images": {
+      "back_default": "/back/60.png",
+      "front_default": "/60.png",
+      "official": "/other/official-artwork/60.png"
+    }
+  },
+  {
+    "id": 61,
+    "name": "poliwhirl",
+    "dex": 110,
+    "height": 10,
+    "weight": 200,
+    "hp": 65,
+    "attack": 65,
+    "defense": 65,
+    "types": ["water"],
+    "images": {
+      "back_default": "/back/61.png",
+      "front_default": "/61.png",
+      "official": "/other/official-artwork/61.png"
+    }
+  },
+  {
+    "id": 62,
+    "name": "poliwrath",
+    "dex": 111,
+    "height": 13,
+    "weight": 540,
+    "hp": 90,
+    "attack": 95,
+    "defense": 95,
+    "types": ["water", "fighting"],
+    "images": {
+      "back_default": "/back/62.png",
+      "front_default": "/62.png",
+      "official": "/other/official-artwork/62.png"
+    }
+  },
+  {
+    "id": 63,
+    "name": "abra",
+    "dex": 148,
+    "height": 9,
+    "weight": 195,
+    "hp": 25,
+    "attack": 20,
+    "defense": 15,
+    "types": ["psychic"],
+    "images": {
+      "back_default": "/back/63.png",
+      "front_default": "/63.png",
+      "official": "/other/official-artwork/63.png"
+    }
+  },
+  {
+    "id": 64,
+    "name": "kadabra",
+    "dex": 38,
+    "height": 13,
+    "weight": 565,
+    "hp": 40,
+    "attack": 35,
+    "defense": 30,
+    "types": ["psychic"],
+    "images": {
+      "back_default": "/back/64.png",
+      "front_default": "/64.png",
+      "official": "/other/official-artwork/64.png"
+    }
+  },
+  {
+    "id": 65,
+    "name": "alakazam",
+    "dex": 149,
+    "height": 15,
+    "weight": 480,
+    "hp": 55,
+    "attack": 50,
+    "defense": 45,
+    "types": ["psychic"],
+    "images": {
+      "back_default": "/back/65.png",
+      "front_default": "/65.png",
+      "official": "/other/official-artwork/65.png"
+    }
+  },
+  {
+    "id": 66,
+    "name": "machop",
+    "dex": 106,
+    "height": 8,
+    "weight": 195,
+    "hp": 70,
+    "attack": 80,
+    "defense": 50,
+    "types": ["fighting"],
+    "images": {
+      "back_default": "/back/66.png",
+      "front_default": "/66.png",
+      "official": "/other/official-artwork/66.png"
+    }
+  },
+  {
+    "id": 67,
+    "name": "machoke",
+    "dex": 41,
+    "height": 15,
+    "weight": 705,
+    "hp": 80,
+    "attack": 100,
+    "defense": 70,
+    "types": ["fighting"],
+    "images": {
+      "back_default": "/back/67.png",
+      "front_default": "/67.png",
+      "official": "/other/official-artwork/67.png"
+    }
+  },
+  {
+    "id": 68,
+    "name": "machamp",
+    "dex": 126,
+    "height": 16,
+    "weight": 1300,
+    "hp": 90,
+    "attack": 130,
+    "defense": 80,
+    "types": ["fighting"],
+    "images": {
+      "back_default": "/back/68.png",
+      "front_default": "/68.png",
+      "official": "/other/official-artwork/68.png"
+    }
+  },
+  {
+    "id": 69,
+    "name": "bellsprout",
+    "dex": 188,
+    "height": 7,
+    "weight": 40,
+    "hp": 50,
+    "attack": 75,
+    "defense": 35,
+    "types": ["grass", "poison"],
+    "images": {
+      "back_default": "/back/69.png",
+      "front_default": "/69.png",
+      "official": "/other/official-artwork/69.png"
+    }
+  },
+  {
+    "id": 70,
+    "name": "weepinbell",
+    "dex": 189,
+    "height": 10,
+    "weight": 64,
+    "hp": 65,
+    "attack": 90,
+    "defense": 50,
+    "types": ["grass", "poison"],
+    "images": {
+      "back_default": "/back/70.png",
+      "front_default": "/70.png",
+      "official": "/other/official-artwork/70.png"
+    }
+  },
+  {
+    "id": 71,
+    "name": "victreebel",
+    "dex": 190,
+    "height": 17,
+    "weight": 155,
+    "hp": 80,
+    "attack": 105,
+    "defense": 65,
+    "types": ["grass", "poison"],
+    "images": {
+      "back_default": "/back/71.png",
+      "front_default": "/71.png",
+      "official": "/other/official-artwork/71.png"
+    }
+  },
+  {
+    "id": 72,
+    "name": "tentacool",
+    "dex": 24,
+    "height": 9,
+    "weight": 455,
+    "hp": 40,
+    "attack": 40,
+    "defense": 35,
+    "types": ["water", "poison"],
+    "images": {
+      "back_default": "/back/72.png",
+      "front_default": "/72.png",
+      "official": "/other/official-artwork/72.png"
+    }
+  },
+  {
+    "id": 73,
+    "name": "tentacruel",
+    "dex": 155,
+    "height": 16,
+    "weight": 550,
+    "hp": 80,
+    "attack": 70,
+    "defense": 65,
+    "types": ["water", "poison"],
+    "images": {
+      "back_default": "/back/73.png",
+      "front_default": "/73.png",
+      "official": "/other/official-artwork/73.png"
+    }
+  },
+  {
+    "id": 74,
+    "name": "geodude",
+    "dex": 169,
+    "height": 4,
+    "weight": 200,
+    "hp": 40,
+    "attack": 80,
+    "defense": 100,
+    "types": ["rock", "ground"],
+    "images": {
+      "back_default": "/back/74.png",
+      "front_default": "/74.png",
+      "official": "/other/official-artwork/74.png"
+    }
+  },
+  {
+    "id": 75,
+    "name": "graveler",
+    "dex": 39,
+    "height": 10,
+    "weight": 1050,
+    "hp": 55,
+    "attack": 95,
+    "defense": 115,
+    "types": ["rock", "ground"],
+    "images": {
+      "back_default": "/back/75.png",
+      "front_default": "/75.png",
+      "official": "/other/official-artwork/75.png"
+    }
+  },
+  {
+    "id": 76,
+    "name": "golem",
+    "dex": 49,
+    "height": 14,
+    "weight": 3000,
+    "hp": 80,
+    "attack": 120,
+    "defense": 130,
+    "types": ["rock", "ground"],
+    "images": {
+      "back_default": "/back/76.png",
+      "front_default": "/76.png",
+      "official": "/other/official-artwork/76.png"
+    }
+  },
+  {
+    "id": 77,
+    "name": "ponyta",
+    "dex": 163,
+    "height": 10,
+    "weight": 300,
+    "hp": 50,
+    "attack": 85,
+    "defense": 55,
+    "types": ["fire"],
+    "images": {
+      "back_default": "/back/77.png",
+      "front_default": "/77.png",
+      "official": "/other/official-artwork/77.png"
+    }
+  },
+  {
+    "id": 78,
+    "name": "rapidash",
+    "dex": 164,
+    "height": 17,
+    "weight": 950,
+    "hp": 65,
+    "attack": 100,
+    "defense": 70,
+    "types": ["fire"],
+    "images": {
+      "back_default": "/back/78.png",
+      "front_default": "/78.png",
+      "official": "/other/official-artwork/78.png"
+    }
+  },
+  {
+    "id": 79,
+    "name": "slowpoke",
+    "dex": 37,
+    "height": 12,
+    "weight": 360,
+    "hp": 90,
+    "attack": 65,
+    "defense": 65,
+    "types": ["water", "psychic"],
+    "images": {
+      "back_default": "/back/79.png",
+      "front_default": "/79.png",
+      "official": "/other/official-artwork/79.png"
+    }
+  },
+  {
+    "id": 80,
+    "name": "slowbro",
+    "dex": 8,
+    "height": 16,
+    "weight": 785,
+    "hp": 95,
+    "attack": 75,
+    "defense": 110,
+    "types": ["water", "psychic"],
+    "images": {
+      "back_default": "/back/80.png",
+      "front_default": "/80.png",
+      "official": "/other/official-artwork/80.png"
+    }
+  },
+  {
+    "id": 81,
+    "name": "magnemite",
+    "dex": 173,
+    "height": 3,
+    "weight": 60,
+    "hp": 25,
+    "attack": 35,
+    "defense": 70,
+    "types": ["electric", "steel"],
+    "images": {
+      "back_default": "/back/81.png",
+      "front_default": "/81.png",
+      "official": "/other/official-artwork/81.png"
+    }
+  },
+  {
+    "id": 82,
+    "name": "magneton",
+    "dex": 54,
+    "height": 10,
+    "weight": 600,
+    "hp": 50,
+    "attack": 60,
+    "defense": 95,
+    "types": ["electric", "steel"],
+    "images": {
+      "back_default": "/back/82.png",
+      "front_default": "/82.png",
+      "official": "/other/official-artwork/82.png"
+    }
+  },
+  {
+    "id": 83,
+    "name": "farfetchd",
+    "dex": 64,
+    "height": 8,
+    "weight": 150,
+    "hp": 52,
+    "attack": 90,
+    "defense": 55,
+    "types": ["normal", "flying"],
+    "images": {
+      "back_default": "/back/83.png",
+      "front_default": "/83.png",
+      "official": "/other/official-artwork/83.png"
+    }
+  },
+  {
+    "id": 84,
+    "name": "doduo",
+    "dex": 70,
+    "height": 14,
+    "weight": 392,
+    "hp": 35,
+    "attack": 85,
+    "defense": 45,
+    "types": ["normal", "flying"],
+    "images": {
+      "back_default": "/back/84.png",
+      "front_default": "/84.png",
+      "official": "/other/official-artwork/84.png"
+    }
+  },
+  {
+    "id": 85,
+    "name": "dodrio",
+    "dex": 116,
+    "height": 18,
+    "weight": 852,
+    "hp": 60,
+    "attack": 110,
+    "defense": 70,
+    "types": ["normal", "flying"],
+    "images": {
+      "back_default": "/back/85.png",
+      "front_default": "/85.png",
+      "official": "/other/official-artwork/85.png"
+    }
+  },
+  {
+    "id": 86,
+    "name": "seel",
+    "dex": 58,
+    "height": 11,
+    "weight": 900,
+    "hp": 65,
+    "attack": 45,
+    "defense": 55,
+    "types": ["water"],
+    "images": {
+      "back_default": "/back/86.png",
+      "front_default": "/86.png",
+      "official": "/other/official-artwork/86.png"
+    }
+  },
+  {
+    "id": 87,
+    "name": "dewgong",
+    "dex": 120,
+    "height": 17,
+    "weight": 1200,
+    "hp": 90,
+    "attack": 70,
+    "defense": 80,
+    "types": ["water", "ice"],
+    "images": {
+      "back_default": "/back/87.png",
+      "front_default": "/87.png",
+      "official": "/other/official-artwork/87.png"
+    }
+  },
+  {
+    "id": 88,
+    "name": "grimer",
+    "dex": 13,
+    "height": 9,
+    "weight": 300,
+    "hp": 80,
+    "attack": 80,
+    "defense": 50,
+    "types": ["poison"],
+    "images": {
+      "back_default": "/back/88.png",
+      "front_default": "/88.png",
+      "official": "/other/official-artwork/88.png"
+    }
+  },
+  {
+    "id": 89,
+    "name": "muk",
+    "dex": 136,
+    "height": 12,
+    "weight": 300,
+    "hp": 105,
+    "attack": 105,
+    "defense": 75,
+    "types": ["poison"],
+    "images": {
+      "back_default": "/back/89.png",
+      "front_default": "/89.png",
+      "official": "/other/official-artwork/89.png"
+    }
+  },
+  {
+    "id": 90,
+    "name": "shellder",
+    "dex": 23,
+    "height": 3,
+    "weight": 40,
+    "hp": 30,
+    "attack": 65,
+    "defense": 100,
+    "types": ["water"],
+    "images": {
+      "back_default": "/back/90.png",
+      "front_default": "/90.png",
+      "official": "/other/official-artwork/90.png"
+    }
+  },
+  {
+    "id": 91,
+    "name": "cloyster",
+    "dex": 139,
+    "height": 15,
+    "weight": 1325,
+    "hp": 50,
+    "attack": 95,
+    "defense": 180,
+    "types": ["water", "ice"],
+    "images": {
+      "back_default": "/back/91.png",
+      "front_default": "/91.png",
+      "official": "/other/official-artwork/91.png"
+    }
+  },
+  {
+    "id": 92,
+    "name": "gastly",
+    "dex": 25,
+    "height": 13,
+    "weight": 1,
+    "hp": 30,
+    "attack": 35,
+    "defense": 30,
+    "types": ["ghost", "poison"],
+    "images": {
+      "back_default": "/back/92.png",
+      "front_default": "/92.png",
+      "official": "/other/official-artwork/92.png"
+    }
+  },
+  {
+    "id": 93,
+    "name": "haunter",
+    "dex": 147,
+    "height": 16,
+    "weight": 1,
+    "hp": 45,
+    "attack": 50,
+    "defense": 45,
+    "types": ["ghost", "poison"],
+    "images": {
+      "back_default": "/back/93.png",
+      "front_default": "/93.png",
+      "official": "/other/official-artwork/93.png"
+    }
+  },
+  {
+    "id": 94,
+    "name": "gengar",
+    "dex": 14,
+    "height": 15,
+    "weight": 405,
+    "hp": 60,
+    "attack": 65,
+    "defense": 60,
+    "types": ["ghost", "poison"],
+    "images": {
+      "back_default": "/back/94.png",
+      "front_default": "/94.png",
+      "official": "/other/official-artwork/94.png"
+    }
+  },
+  {
+    "id": 95,
+    "name": "onix",
+    "dex": 34,
+    "height": 88,
+    "weight": 2100,
+    "hp": 35,
+    "attack": 45,
+    "defense": 160,
+    "types": ["rock", "ground"],
+    "images": {
+      "back_default": "/back/95.png",
+      "front_default": "/95.png",
+      "official": "/other/official-artwork/95.png"
+    }
+  },
+  {
+    "id": 96,
+    "name": "drowzee",
+    "dex": 48,
+    "height": 10,
+    "weight": 324,
+    "hp": 60,
+    "attack": 48,
+    "defense": 45,
+    "types": ["psychic"],
+    "images": {
+      "back_default": "/back/96.png",
+      "front_default": "/96.png",
+      "official": "/other/official-artwork/96.png"
+    }
+  },
+  {
+    "id": 97,
+    "name": "hypno",
+    "dex": 129,
+    "height": 16,
+    "weight": 756,
+    "hp": 85,
+    "attack": 73,
+    "defense": 70,
+    "types": ["psychic"],
+    "images": {
+      "back_default": "/back/97.png",
+      "front_default": "/97.png",
+      "official": "/other/official-artwork/97.png"
+    }
+  },
+  {
+    "id": 98,
+    "name": "krabby",
+    "dex": 78,
+    "height": 4,
+    "weight": 65,
+    "hp": 30,
+    "attack": 105,
+    "defense": 90,
+    "types": ["water"],
+    "images": {
+      "back_default": "/back/98.png",
+      "front_default": "/98.png",
+      "official": "/other/official-artwork/98.png"
+    }
+  },
+  {
+    "id": 99,
+    "name": "kingler",
+    "dex": 138,
+    "height": 13,
+    "weight": 600,
+    "hp": 55,
+    "attack": 130,
+    "defense": 115,
+    "types": ["water"],
+    "images": {
+      "back_default": "/back/99.png",
+      "front_default": "/99.png",
+      "official": "/other/official-artwork/99.png"
+    }
+  },
+  {
+    "id": 100,
+    "name": "voltorb",
+    "dex": 6,
+    "height": 5,
+    "weight": 104,
+    "hp": 40,
+    "attack": 30,
+    "defense": 50,
+    "types": ["electric"],
+    "images": {
+      "back_default": "/back/100.png",
+      "front_default": "/100.png",
+      "official": "/other/official-artwork/100.png"
+    }
+  },
+  {
+    "id": 101,
+    "name": "electrode",
+    "dex": 141,
+    "height": 12,
+    "weight": 666,
+    "hp": 60,
+    "attack": 50,
+    "defense": 70,
+    "types": ["electric"],
+    "images": {
+      "back_default": "/back/101.png",
+      "front_default": "/101.png",
+      "official": "/other/official-artwork/101.png"
+    }
+  },
+  {
+    "id": 102,
+    "name": "exeggcute",
+    "dex": 12,
+    "height": 4,
+    "weight": 25,
+    "hp": 60,
+    "attack": 40,
+    "defense": 80,
+    "types": ["grass", "psychic"],
+    "images": {
+      "back_default": "/back/102.png",
+      "front_default": "/102.png",
+      "official": "/other/official-artwork/102.png"
+    }
+  },
+  {
+    "id": 103,
+    "name": "exeggutor",
+    "dex": 10,
+    "height": 20,
+    "weight": 1200,
+    "hp": 95,
+    "attack": 95,
+    "defense": 85,
+    "types": ["grass", "psychic"],
+    "images": {
+      "back_default": "/back/103.png",
+      "front_default": "/103.png",
+      "official": "/other/official-artwork/103.png"
+    }
+  },
+  {
+    "id": 104,
+    "name": "cubone",
+    "dex": 17,
+    "height": 4,
+    "weight": 65,
+    "hp": 50,
+    "attack": 50,
+    "defense": 95,
+    "types": ["ground"],
+    "images": {
+      "back_default": "/back/104.png",
+      "front_default": "/104.png",
+      "official": "/other/official-artwork/104.png"
+    }
+  },
+  {
+    "id": 105,
+    "name": "marowak",
+    "dex": 145,
+    "height": 10,
+    "weight": 450,
+    "hp": 60,
+    "attack": 80,
+    "defense": 110,
+    "types": ["ground"],
+    "images": {
+      "back_default": "/back/105.png",
+      "front_default": "/105.png",
+      "official": "/other/official-artwork/105.png"
+    }
+  },
+  {
+    "id": 106,
+    "name": "hitmonlee",
+    "dex": 43,
+    "height": 15,
+    "weight": 498,
+    "hp": 50,
+    "attack": 120,
+    "defense": 53,
+    "types": ["fighting"],
+    "images": {
+      "back_default": "/back/106.png",
+      "front_default": "/106.png",
+      "official": "/other/official-artwork/106.png"
+    }
+  },
+  {
+    "id": 107,
+    "name": "hitmonchan",
+    "dex": 44,
+    "height": 14,
+    "weight": 502,
+    "hp": 50,
+    "attack": 105,
+    "defense": 79,
+    "types": ["fighting"],
+    "images": {
+      "back_default": "/back/107.png",
+      "front_default": "/107.png",
+      "official": "/other/official-artwork/107.png"
+    }
+  },
+  {
+    "id": 108,
+    "name": "lickitung",
+    "dex": 11,
+    "height": 12,
+    "weight": 655,
+    "hp": 90,
+    "attack": 55,
+    "defense": 75,
+    "types": ["normal"],
+    "images": {
+      "back_default": "/back/108.png",
+      "front_default": "/108.png",
+      "official": "/other/official-artwork/108.png"
+    }
+  },
+  {
+    "id": 109,
+    "name": "koffing",
+    "dex": 55,
+    "height": 6,
+    "weight": 10,
+    "hp": 40,
+    "attack": 65,
+    "defense": 95,
+    "types": ["poison"],
+    "images": {
+      "back_default": "/back/109.png",
+      "front_default": "/109.png",
+      "official": "/other/official-artwork/109.png"
+    }
+  },
+  {
+    "id": 110,
+    "name": "weezing",
+    "dex": 143,
+    "height": 12,
+    "weight": 95,
+    "hp": 65,
+    "attack": 90,
+    "defense": 120,
+    "types": ["poison"],
+    "images": {
+      "back_default": "/back/110.png",
+      "front_default": "/110.png",
+      "official": "/other/official-artwork/110.png"
+    }
+  },
+  {
+    "id": 111,
+    "name": "rhyhorn",
+    "dex": 18,
+    "height": 10,
+    "weight": 1150,
+    "hp": 80,
+    "attack": 85,
+    "defense": 95,
+    "types": ["ground", "rock"],
+    "images": {
+      "back_default": "/back/111.png",
+      "front_default": "/111.png",
+      "official": "/other/official-artwork/111.png"
+    }
+  },
+  {
+    "id": 112,
+    "name": "rhydon",
+    "dex": 1,
+    "height": 19,
+    "weight": 1200,
+    "hp": 105,
+    "attack": 130,
+    "defense": 120,
+    "types": ["ground", "rock"],
+    "images": {
+      "back_default": "/back/112.png",
+      "front_default": "/112.png",
+      "official": "/other/official-artwork/112.png"
+    }
+  },
+  {
+    "id": 113,
+    "name": "chansey",
+    "dex": 40,
+    "height": 11,
+    "weight": 346,
+    "hp": 250,
+    "attack": 5,
+    "defense": 5,
+    "types": ["normal"],
+    "images": {
+      "back_default": "/back/113.png",
+      "front_default": "/113.png",
+      "official": "/other/official-artwork/113.png"
+    }
+  },
+  {
+    "id": 114,
+    "name": "tangela",
+    "dex": 30,
+    "height": 10,
+    "weight": 350,
+    "hp": 65,
+    "attack": 55,
+    "defense": 115,
+    "types": ["grass"],
+    "images": {
+      "back_default": "/back/114.png",
+      "front_default": "/114.png",
+      "official": "/other/official-artwork/114.png"
+    }
+  },
+  {
+    "id": 115,
+    "name": "kangaskhan",
+    "dex": 2,
+    "height": 22,
+    "weight": 800,
+    "hp": 105,
+    "attack": 95,
+    "defense": 80,
+    "types": ["normal"],
+    "images": {
+      "back_default": "/back/115.png",
+      "front_default": "/115.png",
+      "official": "/other/official-artwork/115.png"
+    }
+  },
+  {
+    "id": 116,
+    "name": "horsea",
+    "dex": 92,
+    "height": 4,
+    "weight": 80,
+    "hp": 30,
+    "attack": 40,
+    "defense": 70,
+    "types": ["water"],
+    "images": {
+      "back_default": "/back/116.png",
+      "front_default": "/116.png",
+      "official": "/other/official-artwork/116.png"
+    }
+  },
+  {
+    "id": 117,
+    "name": "seadra",
+    "dex": 93,
+    "height": 12,
+    "weight": 250,
+    "hp": 55,
+    "attack": 65,
+    "defense": 95,
+    "types": ["water"],
+    "images": {
+      "back_default": "/back/117.png",
+      "front_default": "/117.png",
+      "official": "/other/official-artwork/117.png"
+    }
+  },
+  {
+    "id": 118,
+    "name": "goldeen",
+    "dex": 157,
+    "height": 6,
+    "weight": 150,
+    "hp": 45,
+    "attack": 67,
+    "defense": 60,
+    "types": ["water"],
+    "images": {
+      "back_default": "/back/118.png",
+      "front_default": "/118.png",
+      "official": "/other/official-artwork/118.png"
+    }
+  },
+  {
+    "id": 119,
+    "name": "seaking",
+    "dex": 158,
+    "height": 13,
+    "weight": 390,
+    "hp": 80,
+    "attack": 92,
+    "defense": 65,
+    "types": ["water"],
+    "images": {
+      "back_default": "/back/119.png",
+      "front_default": "/119.png",
+      "official": "/other/official-artwork/119.png"
+    }
+  },
+  {
+    "id": 120,
+    "name": "staryu",
+    "dex": 27,
+    "height": 8,
+    "weight": 345,
+    "hp": 30,
+    "attack": 45,
+    "defense": 55,
+    "types": ["water"],
+    "images": {
+      "back_default": "/back/120.png",
+      "front_default": "/120.png",
+      "official": "/other/official-artwork/120.png"
+    }
+  },
+  {
+    "id": 121,
+    "name": "starmie",
+    "dex": 152,
+    "height": 11,
+    "weight": 800,
+    "hp": 60,
+    "attack": 75,
+    "defense": 85,
+    "types": ["water", "psychic"],
+    "images": {
+      "back_default": "/back/121.png",
+      "front_default": "/121.png",
+      "official": "/other/official-artwork/121.png"
+    }
+  },
+  {
+    "id": 122,
+    "name": "mr-mime",
+    "dex": 42,
+    "height": 13,
+    "weight": 545,
+    "hp": 40,
+    "attack": 45,
+    "defense": 65,
+    "types": ["psychic", "fairy"],
+    "images": {
+      "back_default": "/back/122.png",
+      "front_default": "/122.png",
+      "official": "/other/official-artwork/122.png"
+    }
+  },
+  {
+    "id": 123,
+    "name": "scyther",
+    "dex": 26,
+    "height": 15,
+    "weight": 560,
+    "hp": 70,
+    "attack": 110,
+    "defense": 80,
+    "types": ["bug", "flying"],
+    "images": {
+      "back_default": "/back/123.png",
+      "front_default": "/123.png",
+      "official": "/other/official-artwork/123.png"
+    }
+  },
+  {
+    "id": 124,
+    "name": "jynx",
+    "dex": 72,
+    "height": 14,
+    "weight": 406,
+    "hp": 65,
+    "attack": 50,
+    "defense": 35,
+    "types": ["ice", "psychic"],
+    "images": {
+      "back_default": "/back/124.png",
+      "front_default": "/124.png",
+      "official": "/other/official-artwork/124.png"
+    }
+  },
+  {
+    "id": 125,
+    "name": "electabuzz",
+    "dex": 53,
+    "height": 11,
+    "weight": 300,
+    "hp": 65,
+    "attack": 83,
+    "defense": 57,
+    "types": ["electric"],
+    "images": {
+      "back_default": "/back/125.png",
+      "front_default": "/125.png",
+      "official": "/other/official-artwork/125.png"
+    }
+  },
+  {
+    "id": 126,
+    "name": "magmar",
+    "dex": 51,
+    "height": 13,
+    "weight": 445,
+    "hp": 65,
+    "attack": 95,
+    "defense": 57,
+    "types": ["fire"],
+    "images": {
+      "back_default": "/back/126.png",
+      "front_default": "/126.png",
+      "official": "/other/official-artwork/126.png"
+    }
+  },
+  {
+    "id": 127,
+    "name": "pinsir",
+    "dex": 29,
+    "height": 15,
+    "weight": 550,
+    "hp": 65,
+    "attack": 125,
+    "defense": 100,
+    "types": ["bug"],
+    "images": {
+      "back_default": "/back/127.png",
+      "front_default": "/127.png",
+      "official": "/other/official-artwork/127.png"
+    }
+  },
+  {
+    "id": 128,
+    "name": "tauros",
+    "dex": 60,
+    "height": 14,
+    "weight": 884,
+    "hp": 75,
+    "attack": 100,
+    "defense": 95,
+    "types": ["normal"],
+    "images": {
+      "back_default": "/back/128.png",
+      "front_default": "/128.png",
+      "official": "/other/official-artwork/128.png"
+    }
+  },
+  {
+    "id": 129,
+    "name": "magikarp",
+    "dex": 133,
+    "height": 9,
+    "weight": 100,
+    "hp": 20,
+    "attack": 10,
+    "defense": 55,
+    "types": ["water"],
+    "images": {
+      "back_default": "/back/129.png",
+      "front_default": "/129.png",
+      "official": "/other/official-artwork/129.png"
+    }
+  },
+  {
+    "id": 130,
+    "name": "gyarados",
+    "dex": 22,
+    "height": 65,
+    "weight": 2350,
+    "hp": 95,
+    "attack": 125,
+    "defense": 79,
+    "types": ["water", "flying"],
+    "images": {
+      "back_default": "/back/130.png",
+      "front_default": "/130.png",
+      "official": "/other/official-artwork/130.png"
+    }
+  },
+  {
+    "id": 131,
+    "name": "lapras",
+    "dex": 19,
+    "height": 25,
+    "weight": 2200,
+    "hp": 130,
+    "attack": 85,
+    "defense": 80,
+    "types": ["water", "ice"],
+    "images": {
+      "back_default": "/back/131.png",
+      "front_default": "/131.png",
+      "official": "/other/official-artwork/131.png"
+    }
+  },
+  {
+    "id": 132,
+    "name": "ditto",
+    "dex": 76,
+    "height": 3,
+    "weight": 40,
+    "hp": 48,
+    "attack": 48,
+    "defense": 48,
+    "types": ["normal"],
+    "images": {
+      "back_default": "/back/132.png",
+      "front_default": "/132.png",
+      "official": "/other/official-artwork/132.png"
+    }
+  },
+  {
+    "id": 133,
+    "name": "eevee",
+    "dex": 102,
+    "height": 3,
+    "weight": 65,
+    "hp": 55,
+    "attack": 55,
+    "defense": 50,
+    "types": ["normal"],
+    "images": {
+      "back_default": "/back/133.png",
+      "front_default": "/133.png",
+      "official": "/other/official-artwork/133.png"
+    }
+  },
+  {
+    "id": 134,
+    "name": "vaporeon",
+    "dex": 105,
+    "height": 10,
+    "weight": 290,
+    "hp": 130,
+    "attack": 65,
+    "defense": 60,
+    "types": ["water"],
+    "images": {
+      "back_default": "/back/134.png",
+      "front_default": "/134.png",
+      "official": "/other/official-artwork/134.png"
+    }
+  },
+  {
+    "id": 135,
+    "name": "jolteon",
+    "dex": 104,
+    "height": 8,
+    "weight": 245,
+    "hp": 65,
+    "attack": 65,
+    "defense": 60,
+    "types": ["electric"],
+    "images": {
+      "back_default": "/back/135.png",
+      "front_default": "/135.png",
+      "official": "/other/official-artwork/135.png"
+    }
+  },
+  {
+    "id": 136,
+    "name": "flareon",
+    "dex": 103,
+    "height": 9,
+    "weight": 250,
+    "hp": 65,
+    "attack": 130,
+    "defense": 60,
+    "types": ["fire"],
+    "images": {
+      "back_default": "/back/136.png",
+      "front_default": "/136.png",
+      "official": "/other/official-artwork/136.png"
+    }
+  },
+  {
+    "id": 137,
+    "name": "porygon",
+    "dex": 170,
+    "height": 8,
+    "weight": 365,
+    "hp": 65,
+    "attack": 60,
+    "defense": 70,
+    "types": ["normal"],
+    "images": {
+      "back_default": "/back/137.png",
+      "front_default": "/137.png",
+      "official": "/other/official-artwork/137.png"
+    }
+  },
+  {
+    "id": 138,
+    "name": "omanyte",
+    "dex": 98,
+    "height": 4,
+    "weight": 75,
+    "hp": 35,
+    "attack": 40,
+    "defense": 100,
+    "types": ["rock", "water"],
+    "images": {
+      "back_default": "/back/138.png",
+      "front_default": "/138.png",
+      "official": "/other/official-artwork/138.png"
+    }
+  },
+  {
+    "id": 139,
+    "name": "omastar",
+    "dex": 99,
+    "height": 10,
+    "weight": 350,
+    "hp": 70,
+    "attack": 60,
+    "defense": 125,
+    "types": ["rock", "water"],
+    "images": {
+      "back_default": "/back/139.png",
+      "front_default": "/139.png",
+      "official": "/other/official-artwork/139.png"
+    }
+  },
+  {
+    "id": 140,
+    "name": "kabuto",
+    "dex": 90,
+    "height": 5,
+    "weight": 115,
+    "hp": 30,
+    "attack": 80,
+    "defense": 90,
+    "types": ["rock", "water"],
+    "images": {
+      "back_default": "/back/140.png",
+      "front_default": "/140.png",
+      "official": "/other/official-artwork/140.png"
+    }
+  },
+  {
+    "id": 141,
+    "name": "kabutops",
+    "dex": 91,
+    "height": 13,
+    "weight": 405,
+    "hp": 60,
+    "attack": 115,
+    "defense": 105,
+    "types": ["rock", "water"],
+    "images": {
+      "back_default": "/back/141.png",
+      "front_default": "/141.png",
+      "official": "/other/official-artwork/141.png"
+    }
+  },
+  {
+    "id": 142,
+    "name": "aerodactyl",
+    "dex": 171,
+    "height": 18,
+    "weight": 590,
+    "hp": 80,
+    "attack": 105,
+    "defense": 65,
+    "types": ["rock", "flying"],
+    "images": {
+      "back_default": "/back/142.png",
+      "front_default": "/142.png",
+      "official": "/other/official-artwork/142.png"
+    }
+  },
+  {
+    "id": 143,
+    "name": "snorlax",
+    "dex": 132,
+    "height": 21,
+    "weight": 4600,
+    "hp": 160,
+    "attack": 110,
+    "defense": 65,
+    "types": ["normal"],
+    "images": {
+      "back_default": "/back/143.png",
+      "front_default": "/143.png",
+      "official": "/other/official-artwork/143.png"
+    }
+  },
+  {
+    "id": 144,
+    "name": "articuno",
+    "dex": 74,
+    "height": 17,
+    "weight": 554,
+    "hp": 90,
+    "attack": 85,
+    "defense": 100,
+    "types": ["ice", "flying"],
+    "images": {
+      "back_default": "/back/144.png",
+      "front_default": "/144.png",
+      "official": "/other/official-artwork/144.png"
+    }
+  },
+  {
+    "id": 145,
+    "name": "zapdos",
+    "dex": 75,
+    "height": 16,
+    "weight": 526,
+    "hp": 90,
+    "attack": 90,
+    "defense": 85,
+    "types": ["electric", "flying"],
+    "images": {
+      "back_default": "/back/145.png",
+      "front_default": "/145.png",
+      "official": "/other/official-artwork/145.png"
+    }
+  },
+  {
+    "id": 146,
+    "name": "moltres",
+    "dex": 73,
+    "height": 20,
+    "weight": 600,
+    "hp": 90,
+    "attack": 100,
+    "defense": 90,
+    "types": ["fire", "flying"],
+    "images": {
+      "back_default": "/back/146.png",
+      "front_default": "/146.png",
+      "official": "/other/official-artwork/146.png"
+    }
+  },
+  {
+    "id": 147,
+    "name": "dratini",
+    "dex": 88,
+    "height": 18,
+    "weight": 33,
+    "hp": 41,
+    "attack": 64,
+    "defense": 45,
+    "types": ["dragon"],
+    "images": {
+      "back_default": "/back/147.png",
+      "front_default": "/147.png",
+      "official": "/other/official-artwork/147.png"
+    }
+  },
+  {
+    "id": 148,
+    "name": "dragonair",
+    "dex": 89,
+    "height": 40,
+    "weight": 165,
+    "hp": 61,
+    "attack": 84,
+    "defense": 65,
+    "types": ["dragon"],
+    "images": {
+      "back_default": "/back/148.png",
+      "front_default": "/148.png",
+      "official": "/other/official-artwork/148.png"
+    }
+  },
+  {
+    "id": 149,
+    "name": "dragonite",
+    "dex": 66,
+    "height": 22,
+    "weight": 2100,
+    "hp": 91,
+    "attack": 134,
+    "defense": 95,
+    "types": ["dragon", "flying"],
+    "images": {
+      "back_default": "/back/149.png",
+      "front_default": "/149.png",
+      "official": "/other/official-artwork/149.png"
+    }
+  },
+  {
+    "id": 150,
+    "name": "mewtwo",
+    "dex": 131,
+    "height": 20,
+    "weight": 1220,
+    "hp": 106,
+    "attack": 110,
+    "defense": 90,
+    "types": ["psychic"],
+    "images": {
+      "back_default": "/back/150.png",
+      "front_default": "/150.png",
+      "official": "/other/official-artwork/150.png"
+    }
+  },
+  {
+    "id": 151,
+    "name": "mew",
+    "dex": 21,
+    "height": 4,
+    "weight": 40,
+    "hp": 100,
+    "attack": 100,
+    "defense": 100,
+    "types": ["psychic"],
+    "images": {
+      "back_default": "/back/151.png",
+      "front_default": "/151.png",
+      "official": "/other/official-artwork/151.png"
+    }
+  }
+]
