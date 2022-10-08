@@ -61,6 +61,7 @@ name = "audio-playground"
 version = "0.1.0"
 dependencies = [
  "audiotags",
+ "chrono",
  "futures",
  "lazy_static",
  "meilisearch-sdk",

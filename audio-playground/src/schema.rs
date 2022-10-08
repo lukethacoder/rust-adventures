@@ -13,9 +13,12 @@ pub struct FieldSchema {
     pub created: Field,
     pub modified: Field,
     pub status: Field,
+    pub facets: Field,
+    pub track: Field,
     pub artist: Field,
     pub album: Field,
-    pub genres: Field,
+    pub year: Field,
+    pub created_date: Field,
 }
 
 impl FieldSchema {
@@ -34,12 +37,14 @@ impl FieldSchema {
             .set_indexed()
             .set_fast(Cardinality::SingleValue);
 
-        let facet_options = FacetOptions::default().set_stored();
-
         let uuid = sb.add_text_field("uuid", STRING | STORED);
         let title = sb.add_text_field("title", text_options.clone());
+        let track = sb.add_text_field("track", STRING | STORED);
         let artist = sb.add_text_field("artist", STRING | STORED);
         let album = sb.add_text_field("album", STRING | STORED);
+        let year = sb.add_u64_field("year", num_options.clone());
+
+        let created_date = sb.add_date_field("created_date", num_options.clone());
 
         // Date fields needs to be searched in order, order_by_u64_field seems to work in TopDocs.
         let created = sb.add_date_field("created", date_options.clone());
@@ -48,8 +53,8 @@ impl FieldSchema {
         // Status
         let status = sb.add_u64_field("status", num_options);
 
-        // Facets
-        let genres = sb.add_facet_field("genres", facet_options);
+        // Facets (artist, album, year and genre)
+        let facets = sb.add_facet_field("facets", FacetOptions::default().set_stored());
 
         let schema = sb.build();
 
@@ -60,9 +65,12 @@ impl FieldSchema {
             created,
             modified,
             status,
+            facets,
+            track,
             artist,
             album,
-            genres,
+            year,
+            created_date,
         }
     }
 }
@@ -119,4 +127,28 @@ pub struct PokemonSearchRequest {
     // pub page_number: i32,
     // pub result_per_page: i32,
     // pub reload: bool
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct FacetResult {
+    pub tag: String,
+    pub total: i32,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct FacetResults {
+    pub facet_results: Vec<FacetResult>,
+}
+
+#[derive(Clone, PartialEq)]
+pub struct DocumentSearchResponse {
+    pub total: i32,
+    // pub results: Vec<FieldSchema>,
+    pub facets: ::std::collections::HashMap<String, FacetResults>,
+    pub page_number: i32,
+    pub result_per_page: i32,
+    pub query: String,
+    /// Is there a next page
+    pub next_page: bool,
+    // pub bm25: bool,
 }
