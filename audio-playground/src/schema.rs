@@ -1,7 +1,16 @@
-use tantivy::chrono::{DateTime, NaiveDateTime, Utc};
+use std::fs::Metadata;
+#[cfg(unix)]
+use std::os::unix::fs::MetadataExt;
+#[cfg(windows)]
+use std::os::windows::fs::MetadataExt;
+use std::time::{SystemTime, UNIX_EPOCH};
+
+use crate::utils;
+use audiotags::AudioTag;
+use serde::{Deserialize, Serialize};
 use tantivy::schema::{
     Cardinality, FacetOptions, Field, IndexRecordOption, NumericOptions, Schema, TextFieldIndexing,
-    TextOptions, STORED, STRING, TEXT,
+    TextOptions, STORED, STRING,
 };
 
 #[derive(Debug, Clone)]
@@ -79,6 +88,69 @@ impl Default for FieldSchema {
     fn default() -> Self {
         Self::new()
     }
+}
+
+impl TrackJson {
+    pub fn new(path: String, meta: Metadata, tag: Box<dyn AudioTag>) -> Self {
+        let abs_path = utils::norm(&path.clone());
+        let is_dir = false;
+
+        #[cfg(windows)]
+        let size = meta.file_size() as i64;
+        #[cfg(unix)]
+        let size = meta.size() as i64;
+
+        let name = utils::path2name(path.clone());
+
+        let created_date = meta
+            .created()
+            .unwrap_or(SystemTime::now())
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as i64;
+
+        let mod_at = meta
+            .modified()
+            .unwrap_or(SystemTime::now())
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as i64;
+
+        let track = tag.title().unwrap().to_string();
+        let artist = tag.artist().unwrap().to_string();
+        let album = tag.album_title().unwrap().to_string();
+        let year = tag.year().unwrap().to_string();
+        let genres = [].to_vec(); // tag.genre().unwrap().to_string()
+
+        TrackJson {
+            abs_path,
+            created_date,
+            size,
+            mod_at,
+            is_dir,
+            album,
+            artist,
+            genres,
+            name,
+            track,
+            year,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct TrackJson {
+    pub abs_path: String,
+    pub created_date: i64,
+    pub size: i64,
+    pub mod_at: i64,
+    pub is_dir: bool,
+    pub album: String,
+    pub artist: String,
+    pub genres: Vec<String>,
+    pub name: String,
+    pub track: String,
+    pub year: String,
 }
 
 #[derive(Clone, PartialEq)]

@@ -1,41 +1,36 @@
-use std::collections::{HashMap, HashSet};
-use std::fmt::{Debug, Display};
-use std::fs::read_to_string;
-use std::path::Path;
+use std::collections::HashMap;
+use std::fs;
+use std::fs::{read_to_string, File};
 
+use std::path::Path;
+use std::time::SystemTime;
+
+#[cfg(unix)]
+use std::os::unix::fs::MetadataExt;
+#[cfg(windows)]
+use std::os::windows::fs::MetadataExt;
+
+use audiotags::Tag;
 use chrono::NaiveDateTime;
 use tantivy::chrono::Utc;
 use tantivy::collector::{Count, FacetCollector, FacetCounts, MultiCollector, TopDocs};
-use tantivy::query::{AllQuery, BooleanQuery, Occur, Query, QueryParser, RangeQuery, TermQuery};
-use tantivy::{doc, DateTime, DocId, Index, IndexReader, Score, SegmentReader};
+use tantivy::query::{AllQuery, BooleanQuery, Occur, Query, QueryParser};
 use tantivy::{schema::*, DocAddress};
+use tantivy::{DateTime, Index};
 
-use serde::{Deserialize, Serialize};
+use jwalk::{DirEntry, WalkDir};
 
 mod schema;
 mod search_query;
+mod utils;
 
-use crate::schema::{
-    DocumentSearchRequest, FacetResult, FacetResults, FieldSchema, Filter, OrderBy,
-};
-use crate::search_query::create_query;
+use crate::schema::{FacetResult, FacetResults, FieldSchema, OrderBy, TrackJson};
+use crate::utils::norm;
 
 const JSON_DATA_FILE: &str = "./data/audio.json";
 
-#[derive(Serialize, Deserialize, Clone)]
-pub struct TrackJson {
-    pub abs_path: String,
-    pub created_date: i64,
-    pub size: i64,
-    pub mod_at: i64,
-    pub is_dir: bool,
-    pub album: String,
-    pub artist: String,
-    pub genres: Vec<String>,
-    pub name: String,
-    pub track: String,
-    pub year: String,
-}
+const BASE_AUDIO_DIRECTORY: &str =
+    "C:\\Users\\lukes\\Github\\rust-adventures\\audio-playground\\audio";
 
 pub struct SearchResponse<'a, S> {
     pub query: &'a str,
@@ -75,6 +70,26 @@ fn is_valid_facet(maybe_facet: &str) -> bool {
 }
 
 fn main() -> tantivy::Result<()> {
+    if false {
+        // Fetch audio data and save to the local JSON file
+        walk(&norm(BASE_AUDIO_DIRECTORY).to_string());
+    }
+
+    if false {
+        search();
+    }
+
+    Ok(())
+}
+
+pub fn file_ext(file_name: &str) -> &str {
+    if !file_name.contains(".") {
+        return "";
+    }
+    file_name.split(".").last().unwrap_or("")
+}
+
+fn search() -> tantivy::Result<()> {
     // Read JSON from file
     let json_file_path = Path::new(JSON_DATA_FILE);
     let json_file_str = read_to_string(json_file_path).expect("file not found");
@@ -120,32 +135,14 @@ fn main() -> tantivy::Result<()> {
     let reader = index.reader()?;
     let searcher = reader.searcher();
 
-    // String Search
-
-    // create_query()
     let mut query_parser = QueryParser::for_index(
         &index,
         vec![field_schema.title, field_schema.artist, field_schema.album],
     );
     query_parser.set_field_boost(field_schema.title, 2.0);
-    // // let ext_query_parser = QueryParser::for_index(&index, vec![year]);
-    // let query = query_parser.parse_query("geodude")?;
-    // let top_docs = searcher.search(&query, &TopDocs::with_limit(10)).ok().unwrap();
-    // println!("found {} items", &top_docs.len());
 
-    // for (_score, doc_address) in top_docs {
-    //   println!("doc_address {:?}", &doc_address);
-    //   let retrieved_doc = searcher.doc(doc_address)?;
-    //   println!("response {:?}", &retrieved_doc);
-    // }
-
-    // let string_to_search = "charizard";
-    // let query_parser = QueryParser::for_index(&index, vec![title]);
-    // // let ext_query_parser = QueryParser::for_index(&index, vec![year]);
-    // let query = query_parser.parse_query(string_to_search)?;
-
+    // Query Variables
     let text = "";
-
     let facet_strings_for_search =
         ["/genre/ambient".to_string(), "/year/2003".to_string()].to_vec();
     let facet_strings = [
@@ -262,72 +259,57 @@ fn main() -> tantivy::Result<()> {
 
     println!("found {} items", &items_found);
 
-    // Facet Search
-    // {
-    //   // Types to search by
-    //   let facets = vec![
-    //     Facet::from("/flying"),
-    //     Facet::from("/fire")
-    //   ];
-
-    //   let query = BooleanQuery::new_multiterms_query(
-    //     facets
-    //       .iter()
-    //       .map(|key| {
-    //         Term::from_facet(types_field, key)
-    //       })
-    //       .collect()
-    //   );
-
-    //   let top_docs_by_custom_score = TopDocs::with_limit(4).tweak_score(
-    //     move |segment_reader: &SegmentReader| {
-    //       let types_reader = segment_reader.facet_reader(types_field).unwrap();
-    //       let facet_dict = types_reader.facet_dict();
-
-    //       let query_ords: HashSet<u64> = facets
-    //         .iter()
-    //         .filter_map(|key| facet_dict.term_ord(key.encoded_str()).unwrap())
-    //         .collect();
-
-    //       let mut facet_ords_buffer: Vec<u64> = Vec::with_capacity(20);
-
-    //       move |doc: DocId, original_score: Score| {
-    //         types_reader.facet_ords(doc, &mut facet_ords_buffer);
-    //         let missing_types = facet_ords_buffer
-    //           .iter()
-    //           .filter(|ord| !query_ords.contains(ord))
-    //           .count();
-    //         let tweak = 1.0 / (4_f32).powi(missing_types as i32);
-
-    //         original_score * tweak
-    //       }
-    //     }
-    //   );
-
-    //   let top_docs = searcher.search(&query, &top_docs_by_custom_score).ok().unwrap();
-    //   println!("found {} items", &top_docs.len());
-
-    //   for (_score, doc_address) in top_docs {
-    //     let the_doc = searcher.doc(doc_address).ok().unwrap();
-    //     let response_name = the_doc.get_first(title_field).unwrap().as_text().unwrap().to_owned();
-    //     println!("\nFound pokemon {:?} with types ", &response_name);
-
-    //     let response_types = the_doc.get_all(types_field).collect::<Vec<_>>();
-    //     for type_value in response_types {
-    //       let as_facet = type_value.as_facet().unwrap();
-    //       println!("  {:?}", &as_facet.to_path_string().replace("/", ""));
-    //     }
-    //   }
-    // }
-
     Ok(())
 }
 
-// fn search_text_in_track() {}
-// fn search_text_in_genre() {}
-// fn search_text_in_artist() {}
-// fn search_text_in_album() {}
+fn walk(path: &String) {
+    let start = SystemTime::now();
+    println!("start travel {}", path);
+    let mut cnt = 0;
 
-// fn search_range_year(year_from: Option<String>, year_to: Option<String>) {
-//     println!("Searching from {:?} to {:?}", year_from, year_to);
-// }
+    let mut generic = WalkDir::new(&path);
+    generic = generic.process_read_dir(move |_depth, _path, _read_dir_state, children| {
+        children.iter_mut().for_each(|dir_entry_result| {
+            if let Ok(dir_entry) = dir_entry_result {
+                let curr_path = norm(dir_entry.path().to_str().unwrap_or(""));
+            }
+        });
+    });
+
+    let mut all_tracks: Vec<TrackJson> = Vec::new();
+
+    for entry in generic {
+        cnt += 1;
+        if entry.is_err() {
+            continue;
+        }
+
+        let en: DirEntry<((), ())> = entry.unwrap();
+        let metadata = en.metadata().unwrap();
+        let buf = en.path();
+        let file_type = en.file_type();
+        let is_dir = file_type.is_dir();
+
+        let path = buf.to_str().unwrap().to_string();
+        let name = en.file_name().to_str().unwrap();
+        let ext = file_ext(name);
+
+        let allowed_types = ["mp3", "m4a", "mp4", "flac"];
+
+        if !is_dir & allowed_types.contains(&ext) {
+            let tag = Tag::new().read_from_path(&path).unwrap();
+            all_tracks.push(TrackJson::new(norm(&path), metadata, tag));
+        }
+    }
+    let end = SystemTime::now();
+
+    // save all_tracks to json file
+    let as_string = serde_json::to_string_pretty(&all_tracks).unwrap();
+    fs::write("./data/audio.json", as_string).expect("Unable to write file");
+
+    println!(
+        "cost {} s, total {} files",
+        end.duration_since(start).unwrap().as_secs(),
+        cnt
+    );
+}
