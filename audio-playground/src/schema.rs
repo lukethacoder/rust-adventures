@@ -7,6 +7,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::utils;
 use audiotags::AudioTag;
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use tantivy::schema::{
     Cardinality, FacetOptions, Field, IndexRecordOption, NumericOptions, Schema, TextFieldIndexing,
@@ -90,10 +91,16 @@ impl Default for FieldSchema {
     }
 }
 
+pub fn get_genre_regex() -> regex::Regex {
+    return Regex::new(r#"[/,;]"#).unwrap();
+}
+pub fn get_genre_bracket_regex() -> regex::Regex {
+    return Regex::new(r"[()]").unwrap();
+}
+
 impl TrackJson {
     pub fn new(path: String, meta: Metadata, tag: Box<dyn AudioTag>) -> Self {
         let abs_path = utils::norm(&path.clone());
-        let is_dir = false;
 
         #[cfg(windows)]
         let size = meta.file_size() as i64;
@@ -116,18 +123,49 @@ impl TrackJson {
             .unwrap()
             .as_secs() as i64;
 
-        let track = tag.title().unwrap().to_string();
-        let artist = tag.artist().unwrap().to_string();
-        let album = tag.album_title().unwrap().to_string();
-        let year = tag.year().unwrap().to_string();
-        let genres = [].to_vec(); // tag.genre().unwrap().to_string()
+        let track = tag.title().unwrap_or("untitled").to_string();
+        let artist = tag.artist().unwrap_or("untitled").to_string();
+        let album = tag.album_title().unwrap_or("untitled").to_string();
+        let year: i32 = tag.year().unwrap_or(0);
+
+        println!("\n------------");
+
+        let genres_as_string = tag.genre().unwrap_or("").replace("\0", ";");
+        println!("  genres_as_string {:?} ", &genres_as_string);
+
+        // Split the string by "/,;" chars
+        let genres_array = get_genre_regex()
+            .split(&genres_as_string)
+            .collect::<Vec<_>>();
+
+        // Attempt to store values as ID3v1 Genre keys, fallback to the string value
+        let genres: Vec<String> = genres_array
+            .iter()
+            .map(|&genre_string| {
+                let index_genre = utils::ID3V1_GENRES.iter().position(|&r| r == genre_string);
+                if let Some(index) = index_genre {
+                    println!("ID3V1_GENRES[{}] {}", index, utils::ID3V1_GENRES[index]);
+                    return index.to_string();
+                } else {
+                    println!("Invalid genre");
+                    let genre_without_brackets = get_genre_bracket_regex()
+                        .replace_all(genre_string, "")
+                        .into_owned();
+
+                    return genre_without_brackets;
+                }
+            })
+            .collect::<Vec<_>>();
+
+        println!("genres {:?}", genres);
+
+        // let genres = [].to_vec(); // tag.genre().unwrap().to_string()
 
         TrackJson {
             abs_path,
             created_date,
             size,
             mod_at,
-            is_dir,
             album,
             artist,
             genres,
@@ -144,13 +182,12 @@ pub struct TrackJson {
     pub created_date: i64,
     pub size: i64,
     pub mod_at: i64,
-    pub is_dir: bool,
     pub album: String,
     pub artist: String,
     pub genres: Vec<String>,
     pub name: String,
     pub track: String,
-    pub year: String,
+    pub year: i32,
 }
 
 #[derive(Clone, PartialEq)]

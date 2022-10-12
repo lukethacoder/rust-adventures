@@ -29,6 +29,8 @@ use crate::utils::norm;
 
 const JSON_DATA_FILE: &str = "./data/audio.json";
 
+// "C:\\Users\\lukes\\Music"
+// "E:\\Music";
 const BASE_AUDIO_DIRECTORY: &str =
     "C:\\Users\\lukes\\Github\\rust-adventures\\audio-playground\\audio";
 
@@ -70,7 +72,7 @@ fn is_valid_facet(maybe_facet: &str) -> bool {
 }
 
 fn main() -> tantivy::Result<()> {
-    if false {
+    if true {
         // Fetch audio data and save to the local JSON file
         walk(&norm(BASE_AUDIO_DIRECTORY).to_string());
     }
@@ -108,7 +110,7 @@ fn search() -> tantivy::Result<()> {
         document.add_text(field_schema.track, &item.track);
         document.add_text(field_schema.album, &item.album);
         document.add_text(field_schema.artist, &item.artist);
-        document.add_u64(field_schema.year, item.year.parse::<u64>().unwrap_or(1900));
+        document.add_u64(field_schema.year, item.year as u64);
 
         let date_time_value =
             DateTime::from_utc(NaiveDateTime::from_timestamp(item.created_date, 0), Utc);
@@ -277,6 +279,19 @@ fn walk(path: &String) {
     });
 
     let mut all_tracks: Vec<TrackJson> = Vec::new();
+    let mut tracks_failed: Vec<String> = Vec::new();
+
+    // let (game_code, len) = loop {
+    //     match loby_matcher(&mut stream) {
+    //         Ok(game_code) => break game_code,
+    //         // Err(e) if e.kind() == ErrorKind::Other && e.to_string() == "wrong game code" => {
+    //         // or just (for ease of use)
+    //         Err(e) if e.to_string() == "wrong game code" => {
+    //             stream.write("Wrong code\n".as_bytes())?;
+    //         }
+    //         Err(e) => return Err(e),
+    //     };
+    // };
 
     for entry in generic {
         cnt += 1;
@@ -297,8 +312,21 @@ fn walk(path: &String) {
         let allowed_types = ["mp3", "m4a", "mp4", "flac"];
 
         if !is_dir & allowed_types.contains(&ext) {
-            let tag = Tag::new().read_from_path(&path).unwrap();
-            all_tracks.push(TrackJson::new(norm(&path), metadata, tag));
+            println!("path {}", &path);
+            let tag = Tag::new().read_from_path(&path);
+
+            if tag.is_err() {
+                tracks_failed.push(path);
+                continue;
+            }
+            all_tracks.push(TrackJson::new(norm(&path), metadata, tag.unwrap()));
+        }
+    }
+
+    println!("Failed to index {} file(s) ", &tracks_failed.len());
+    if !tracks_failed.is_empty() {
+        for track_failed in tracks_failed {
+            println!("  track failed {} ", track_failed);
         }
     }
     let end = SystemTime::now();
