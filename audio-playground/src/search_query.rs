@@ -63,7 +63,6 @@ fn handle_document_with_score(
     doc: Document,
     score: Option<ResultScore>,
 ) -> DocumentResult {
-    println!("handle_document_with_score");
     let track = Track::with_document(field_schema, doc);
 
     let doc_response = DocumentResult {
@@ -78,9 +77,9 @@ fn convert_int_order(
     response: SearchResponse<u64>,
     searcher: &Searcher,
 ) -> DocumentSearchResponse {
-    println!("convert_int_order query at {}:{}", line!(), file!());
+    info!("convert_int_order query at {}:{}", line!(), file!());
     let mut total = response.top_docs.len();
-    println!("\nfound {} total", &total);
+    info!("\nfound {} total", &total);
 
     let next_page: bool;
     if total > response.results_per_page as usize {
@@ -91,11 +90,11 @@ fn convert_int_order(
     }
     let mut results = Vec::with_capacity(total);
 
-    println!("convert_int_order query at {}:{}", line!(), file!());
+    info!("convert_int_order query at {}:{}", line!(), file!());
     for (id, (_, doc_address)) in response.top_docs.into_iter().enumerate() {
         match searcher.doc(doc_address) {
             Ok(doc) => {
-                println!("convert_int_order OK query at {}:{}", line!(), file!());
+                info!("convert_int_order OK query at {}:{}", line!(), file!());
                 let result = handle_document_with_score(
                     &field_schema,
                     doc,
@@ -104,15 +103,14 @@ fn convert_int_order(
                         booster: id as f32,
                     }),
                 );
-                println!("result {:?} ", &result);
                 results.push(result);
             }
-            Err(e) => println!("Error retrieving document from index: {}", e),
+            Err(e) => error!("Error retrieving document from index: {}", e),
         }
     }
 
     let facets = create_facets(response.facets, response.facets_count);
-    println!("Document query at {}:{}", line!(), file!());
+    info!("Document query at {}:{}", line!(), file!());
     DocumentSearchResponse {
         total: total as i32,
         results,
@@ -130,9 +128,7 @@ fn convert_bm25_order(
     response: SearchResponse<f32>,
     searcher: &Searcher,
 ) -> DocumentSearchResponse {
-    println!("\nconvert_bm25_order at {}:{}", line!(), file!());
     let mut total = response.top_docs.len();
-    println!("total {}", total);
 
     let next_page: bool;
     if total > response.results_per_page as usize {
@@ -142,7 +138,7 @@ fn convert_bm25_order(
         next_page = false;
     }
     let mut results = Vec::with_capacity(total);
-    println!("convert_bm25_order at {}:{}", line!(), file!());
+    info!("convert_bm25_order at {}:{}", line!(), file!());
 
     for (id, (score, doc_address)) in response.top_docs.into_iter().take(total).enumerate() {
         match searcher.doc(doc_address) {
@@ -156,12 +152,12 @@ fn convert_bm25_order(
                     }),
                 ));
             }
-            Err(e) => println!("Error retrieving document from index: {}", e),
+            Err(e) => error!("Error retrieving document from index: {}", e),
         }
     }
 
     let facets = create_facets(response.facets, response.facets_count);
-    println!("Document query at {}:{}", line!(), file!());
+    info!("Document query at {}:{}", line!(), file!());
     DocumentSearchResponse {
         total: total as i32,
         results,
@@ -204,7 +200,6 @@ pub fn do_search(
     } else {
         Box::new(AllQuery) as Box<dyn Query>
     };
-    println!("query {:?} ", query);
 
     // Offset to search from
     let results = request.result_per_page as usize;

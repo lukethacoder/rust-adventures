@@ -7,9 +7,13 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::utils::{self, genre_string_to_vec};
 use audiotags::AudioTag;
+use chrono::{DateTime, Utc};
+use id3::TagLike;
 use serde::{Deserialize, Serialize};
+use slug::slugify;
 use tantivy::{
     collector::FacetCounts,
+    fastfield::FastValue,
     schema::{
         Cardinality, FacetOptions, Field, IndexRecordOption, NumericOptions, Schema,
         TextFieldIndexing, TextOptions, Value, STORED, STRING,
@@ -106,8 +110,9 @@ impl Default for FieldSchema {
 pub struct Track {
     pub abs_path: String,
     pub created_date: i64,
-    pub size: i64,
     pub modified_date: i64,
+    pub indexed_date: i64,
+    pub size: i64,
     pub album: String,
     pub artist: String,
     pub genres: Vec<String>,
@@ -118,8 +123,6 @@ pub struct Track {
 
 impl Track {
     pub fn with_document(field_schema: &FieldSchema, doc: Document) -> Self {
-        println!("Track.with_document");
-
         let genre_string = doc
             .get_first(field_schema.genre)
             .and_then(Value::as_text)
@@ -135,14 +138,28 @@ impl Track {
             .get_first(field_schema.size)
             .and_then(Value::as_i64)
             .unwrap_or(0000) as i64;
-        let created_date = doc
+
+        let now_date_time: &DateTime<Utc> = &chrono::DateTime::<Utc>::MIN_UTC;
+
+        // Dates
+        let created_date: i64 = doc
             .get_first(field_schema.created_date)
-            .and_then(Value::as_i64)
-            .unwrap_or(0000) as i64;
-        let modified_date = doc
+            .and_then(Value::as_date)
+            .unwrap_or(now_date_time)
+            .timestamp_millis();
+
+        let modified_date: i64 = doc
             .get_first(field_schema.modified_date)
-            .and_then(Value::as_i64)
-            .unwrap_or(0000) as i64;
+            .and_then(Value::as_date)
+            .unwrap_or(now_date_time)
+            .timestamp_millis();
+
+        let indexed_date: i64 = doc
+            .get_first(field_schema.indexed_date)
+            .and_then(Value::as_date)
+            .unwrap_or(now_date_time)
+            .timestamp_millis();
+
         let album = doc
             .get_first(field_schema.album)
             .and_then(Value::as_text)
@@ -165,7 +182,7 @@ impl Track {
             .to_string();
         let year = doc
             .get_first(field_schema.year)
-            .and_then(Value::as_i64)
+            .and_then(Value::as_u64)
             .unwrap_or(0000) as i32;
 
         Track {
@@ -173,6 +190,7 @@ impl Track {
             size,
             created_date,
             modified_date,
+            indexed_date,
             album,
             artist,
             name,
@@ -184,6 +202,69 @@ impl Track {
 }
 
 impl TrackJson {
+    pub fn new_wav(path: String, meta: Metadata, tag: id3::Tag) -> Self {
+        let abs_path = utils::norm(&path.clone());
+
+        #[cfg(windows)]
+        let size = meta.file_size() as i64;
+        #[cfg(unix)]
+        let size = meta.size() as i64;
+
+        let name = utils::path2name(path.clone());
+
+        // create a unique id to check for existing index items
+        // TODO: find a more unique option than the file name (and not the file path)
+        let id = slugify(name.clone());
+
+        let created_date = meta
+            .created()
+            .unwrap_or(SystemTime::now())
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as i64;
+
+        let modified_date = meta
+            .modified()
+            .unwrap_or(SystemTime::now())
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as i64;
+
+        let indexed_date = SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as i64;
+
+        let track = tag.title().unwrap_or("untitled").to_string();
+        let artist = tag.artist().unwrap_or("untitled").to_string();
+        let album = tag.album().unwrap_or("untitled").to_string();
+        let genre = tag.genre().unwrap_or("").to_string();
+        let year: i32 = tag.year().unwrap_or(0);
+
+        // NOTE: we're not using tag.duration() as this queries for the ID3 value which is usually null
+        // instead we will query for the duration at indexing run time
+        let duration: f64 = 0.0;
+
+        // Genre
+        let genres = genre_string_to_vec(&genre);
+
+        TrackJson {
+            id,
+            abs_path,
+            created_date,
+            modified_date,
+            indexed_date,
+            size,
+            album,
+            artist,
+            genre,
+            genres,
+            name,
+            track,
+            duration,
+            year,
+        }
+    }
     pub fn new(path: String, meta: Metadata, tag: Box<dyn AudioTag>) -> Self {
         let abs_path = utils::norm(&path.clone());
 
@@ -193,6 +274,9 @@ impl TrackJson {
         let size = meta.size() as i64;
 
         let name = utils::path2name(path.clone());
+
+        // create a unique id to check for existing index items
+        let id = slugify(path.clone());
 
         let created_date = meta
             .created()
@@ -217,13 +301,17 @@ impl TrackJson {
         let artist = tag.artist().unwrap_or("untitled").to_string();
         let album = tag.album_title().unwrap_or("untitled").to_string();
         let genre = tag.genre().unwrap_or("").to_string();
-        let duration: f64 = tag.duration().unwrap_or(0.0);
         let year: i32 = tag.year().unwrap_or(0);
+
+        // NOTE: we're not using tag.duration() as this queries for the ID3 value which is usually null
+        // instead we will query for the duration at indexing run time
+        let duration: f64 = 0.0;
 
         // Genre
         let genres = genre_string_to_vec(&genre);
 
         TrackJson {
+            id,
             abs_path,
             created_date,
             modified_date,
@@ -243,6 +331,7 @@ impl TrackJson {
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq)]
 pub struct TrackJson {
+    pub id: String,
     pub abs_path: String,
     pub created_date: i64,
     pub modified_date: i64,
@@ -295,31 +384,31 @@ pub struct DocumentSearchRequest {
     pub reload: bool,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Serialize, Debug, Clone, PartialEq)]
 pub struct FacetResult {
     pub tag: String,
     pub total: i32,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Serialize, Debug, Clone, PartialEq)]
 pub struct FacetResults {
     pub facet_results: Vec<FacetResult>,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Serialize, Clone, Debug, PartialEq)]
 pub struct ResultScore {
     pub bm25: f32,
     // In the case of two equal bm25 scores, booster decides
     pub booster: f32,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Serialize, Clone, Debug, PartialEq)]
 pub struct DocumentResult {
     pub score: Option<ResultScore>,
     pub track: Track,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Serialize, Clone, Debug, PartialEq)]
 pub struct DocumentSearchResponse {
     pub total: i32,
     pub results: Vec<DocumentResult>,

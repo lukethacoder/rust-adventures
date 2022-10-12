@@ -1,5 +1,6 @@
 use std::fs;
 use std::fs::read_to_string;
+use std::io;
 
 use std::path::Path;
 use std::time::SystemTime;
@@ -11,6 +12,8 @@ use std::os::windows::fs::MetadataExt;
 
 use audiotags::Tag;
 use chrono::NaiveDateTime;
+use id3;
+use mpeg_audio_header::{Header, ParseMode};
 use tantivy::chrono::Utc;
 use tantivy::{schema::*, DateTime, Index, IndexWriter, TantivyError};
 
@@ -33,6 +36,9 @@ const JSON_DATA_FILE: &str = "./data/audio.json";
 // "E:\\Music";
 const BASE_AUDIO_DIRECTORY: &str =
     "C:\\Users\\lukes\\Github\\rust-adventures\\audio-playground\\audio";
+
+const INDEX_CACHE_DIRECTORY: &str =
+    "C:\\Users\\lukes\\Github\\rust-adventures\\audio-playground\\.index-cache";
 
 fn main() -> tantivy::Result<()> {
     if false {
@@ -59,6 +65,8 @@ fn index_data(
 
     println!("Total {} items", data.len());
 
+    let mut tracks_failed: Vec<String> = Vec::new();
+
     for item in data.iter() {
         let mut document = Document::default();
         document.add_text(field_schema.abs_path, &item.abs_path);
@@ -69,7 +77,6 @@ fn index_data(
         document.add_text(field_schema.genre, &item.genre);
         document.add_u64(field_schema.year, item.year as u64);
         document.add_i64(field_schema.size, item.size);
-        document.add_f64(field_schema.duration, item.duration);
 
         let date_time_value =
             DateTime::from_utc(NaiveDateTime::from_timestamp(item.created_date, 0), Utc);
@@ -97,20 +104,67 @@ fn index_data(
             document.add_facet(field_schema.facets, Facet::from(&facet_string));
         }
 
+        // Duration is usually not stored in ID3 tags, so lets calculate it from the audio file itself
+        let path = Path::new(&item.abs_path);
+        let ext = file_ext(&item.abs_path);
+
+        // `wav` files don't seem to play nice here, so just ignore them for now
+        if ext != "wav" {
+            let header = Header::read_from_path(&path, ParseMode::PreferVbrHeaders);
+            if header.is_err() {
+                tracks_failed.push(item.abs_path.clone());
+            } else {
+                document.add_f64(
+                    field_schema.duration,
+                    header.unwrap().total_duration.as_secs_f64(),
+                );
+            }
+        } else {
+            println!("ignoring wav file duration calculation {:?}", &item.name);
+        }
+
         index_writer.add_document(document)?;
     }
+    println!(
+        "Failed to read duration on {} file(s) ",
+        &tracks_failed.len()
+    );
+    if !tracks_failed.is_empty() {
+        for track_failed in tracks_failed {
+            println!("  track failed {} ", track_failed);
+        }
+    }
+
     index_writer.commit()?;
 
     Ok(())
 }
 
 fn search() -> tantivy::Result<()> {
+    let start = SystemTime::now();
+
     let field_schema: FieldSchema = FieldSchema::new();
-    let index = Index::create_in_ram(field_schema.schema.clone());
+
+    let index_path = Path::new(INDEX_CACHE_DIRECTORY);
+    let index;
+    if index_path.exists() {
+        index = Index::open_in_dir(&index_path).ok().unwrap();
+    } else {
+        fs::create_dir(index_path).ok();
+        index = Index::create_in_dir(&index_path, field_schema.schema.clone())
+            .ok()
+            .unwrap();
+    }
+
+    // let index = Index::create_in_ram(field_schema.schema.clone());
     let mut index_writer = index.writer(30_000_000)?;
 
     index_data(&field_schema, index_writer, JSON_DATA_FILE)?;
-    let reader = index.reader()?;
+    let reader = index
+        .reader_builder()
+        .reload_policy(tantivy::ReloadPolicy::OnCommit)
+        .try_into()
+        .unwrap();
 
     // Query Variables (will be passed to the method from a FE interface of some sort)
     let text = "Eminem".to_string();
@@ -135,7 +189,7 @@ fn search() -> tantivy::Result<()> {
 
     // Order by
     let order_by_object: OrderBy = OrderBy {
-        field: "created".to_string(),
+        field: "created_date".to_string(),
         order_type: OrderType::Desc,
     };
     let order_by: Option<OrderBy> = Some(order_by_object);
@@ -167,7 +221,8 @@ fn search() -> tantivy::Result<()> {
     let response: DocumentSearchResponse =
         do_search(index, reader, field_schema, &request, faced_only_flag);
 
-    println!("response {:?} ", response);
+    let response_json = serde_json::to_string(&response)?;
+    println!("{}", response_json);
 
     // By Year
     // let year_range_query = Box::new(RangeQuery::new_u64(field_schema.year, year_start..year_end));
@@ -233,6 +288,13 @@ fn search() -> tantivy::Result<()> {
     //     }
     // }
 
+    let end = SystemTime::now();
+    println!(
+        "cost {}ms ({}secs) to index and run the search",
+        end.duration_since(start).unwrap().as_millis(),
+        end.duration_since(start).unwrap().as_secs(),
+    );
+
     Ok(())
 }
 
@@ -269,17 +331,22 @@ fn walk(path: &String) {
         let name = en.file_name().to_str().unwrap();
         let ext = file_ext(name);
 
-        let allowed_types = ["mp3", "m4a", "mp4", "flac"];
+        let allowed_types = ["mp3", "m4a", "mp4", "flac", "wav"];
 
         if !is_dir & allowed_types.contains(&ext) {
-            println!("path {}", &path);
-            let tag = Tag::new().read_from_path(&path);
+            // audiotags does not support wav files, so we must handle them directly with the ID3 package
+            if ext == "wav" {
+                let tag = id3::Tag::read_from_wav_path(&path).unwrap();
+                all_tracks.push(TrackJson::new_wav(norm(&path), metadata, tag));
+            } else {
+                let tag = Tag::new().read_from_path(&path);
 
-            if tag.is_err() {
-                tracks_failed.push(path);
-                continue;
+                if tag.is_err() {
+                    tracks_failed.push(path);
+                    continue;
+                }
+                all_tracks.push(TrackJson::new(norm(&path), metadata, tag.unwrap()));
             }
-            all_tracks.push(TrackJson::new(norm(&path), metadata, tag.unwrap()));
         }
     }
 
@@ -296,8 +363,8 @@ fn walk(path: &String) {
     fs::write("./data/audio.json", as_string).expect("Unable to write file");
 
     println!(
-        "cost {} s, total {} files",
-        end.duration_since(start).unwrap().as_secs(),
+        "cost {}ms, total {} files",
+        end.duration_since(start).unwrap().as_millis(),
         cnt
     );
 }

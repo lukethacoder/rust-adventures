@@ -1,3 +1,7 @@
 /audio/**/
 /audio/*.mp3
+/audio/*.wav
+/audio/*.flac
+/audio/*.m4a
 !/audio/.gitkeep
+/.index-cache/
