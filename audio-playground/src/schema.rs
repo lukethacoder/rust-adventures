@@ -5,30 +5,36 @@ use std::os::unix::fs::MetadataExt;
 use std::os::windows::fs::MetadataExt;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use crate::utils;
+use crate::utils::{self, genre_string_to_vec};
 use audiotags::AudioTag;
-use regex::Regex;
 use serde::{Deserialize, Serialize};
-use tantivy::schema::{
-    Cardinality, FacetOptions, Field, IndexRecordOption, NumericOptions, Schema, TextFieldIndexing,
-    TextOptions, STORED, STRING,
+use tantivy::{
+    collector::FacetCounts,
+    schema::{
+        Cardinality, FacetOptions, Field, IndexRecordOption, NumericOptions, Schema,
+        TextFieldIndexing, TextOptions, Value, STORED, STRING,
+    },
+    DocAddress, Document,
 };
 
 #[derive(Debug, Clone)]
 pub struct FieldSchema {
     pub schema: Schema,
 
-    pub uuid: Field,
     pub title: Field,
-    pub created: Field,
-    pub modified: Field,
+    pub abs_path: Field,
+    pub size: Field,
+    pub created_date: Field,
+    pub modified_date: Field,
+    pub indexed_date: Field,
     pub status: Field,
     pub facets: Field,
     pub track: Field,
     pub artist: Field,
     pub album: Field,
     pub year: Field,
-    pub created_date: Field,
+    pub genre: Field,
+    pub duration: Field,
 }
 
 impl FieldSchema {
@@ -47,18 +53,20 @@ impl FieldSchema {
             .set_indexed()
             .set_fast(Cardinality::SingleValue);
 
-        let uuid = sb.add_text_field("uuid", STRING | STORED);
+        let abs_path = sb.add_text_field("abs_path", STRING | STORED);
+        let size = sb.add_i64_field("size", num_options.clone());
         let title = sb.add_text_field("title", text_options.clone());
         let track = sb.add_text_field("track", STRING | STORED);
         let artist = sb.add_text_field("artist", STRING | STORED);
         let album = sb.add_text_field("album", STRING | STORED);
+        let genre = sb.add_text_field("genre", STRING | STORED);
+        let duration = sb.add_f64_field("duration", num_options.clone());
         let year = sb.add_u64_field("year", num_options.clone());
 
-        let created_date = sb.add_date_field("created_date", num_options.clone());
-
-        // Date fields needs to be searched in order, order_by_u64_field seems to work in TopDocs.
-        let created = sb.add_date_field("created", date_options.clone());
-        let modified = sb.add_date_field("modified", date_options);
+        // Dates
+        let created_date = sb.add_date_field("created_date", date_options.clone());
+        let modified_date = sb.add_date_field("modified_date", date_options.clone());
+        let indexed_date = sb.add_date_field("indexed_date", date_options);
 
         // Status
         let status = sb.add_u64_field("status", num_options);
@@ -70,17 +78,20 @@ impl FieldSchema {
 
         FieldSchema {
             schema,
-            uuid,
+            abs_path,
+            size,
             title,
-            created,
-            modified,
+            created_date,
+            modified_date,
+            indexed_date,
             status,
             facets,
             track,
             artist,
             album,
             year,
-            created_date,
+            genre,
+            duration,
         }
     }
 }
@@ -91,11 +102,85 @@ impl Default for FieldSchema {
     }
 }
 
-pub fn get_genre_regex() -> regex::Regex {
-    return Regex::new(r#"[/,;]"#).unwrap();
+#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq)]
+pub struct Track {
+    pub abs_path: String,
+    pub created_date: i64,
+    pub size: i64,
+    pub modified_date: i64,
+    pub album: String,
+    pub artist: String,
+    pub genres: Vec<String>,
+    pub name: String,
+    pub track: String,
+    pub year: i32,
 }
-pub fn get_genre_bracket_regex() -> regex::Regex {
-    return Regex::new(r"[()]").unwrap();
+
+impl Track {
+    pub fn with_document(field_schema: &FieldSchema, doc: Document) -> Self {
+        println!("Track.with_document");
+
+        let genre_string = doc
+            .get_first(field_schema.genre)
+            .and_then(Value::as_text)
+            .unwrap_or("");
+        let genres = genre_string_to_vec(genre_string);
+
+        let abs_path = doc
+            .get_first(field_schema.abs_path)
+            .and_then(Value::as_text)
+            .unwrap_or("")
+            .to_string();
+        let size = doc
+            .get_first(field_schema.size)
+            .and_then(Value::as_i64)
+            .unwrap_or(0000) as i64;
+        let created_date = doc
+            .get_first(field_schema.created_date)
+            .and_then(Value::as_i64)
+            .unwrap_or(0000) as i64;
+        let modified_date = doc
+            .get_first(field_schema.modified_date)
+            .and_then(Value::as_i64)
+            .unwrap_or(0000) as i64;
+        let album = doc
+            .get_first(field_schema.album)
+            .and_then(Value::as_text)
+            .unwrap_or("")
+            .to_string();
+        let artist = doc
+            .get_first(field_schema.artist)
+            .and_then(Value::as_text)
+            .unwrap_or("")
+            .to_string();
+        let name = doc
+            .get_first(field_schema.title)
+            .and_then(Value::as_text)
+            .unwrap_or("")
+            .to_string();
+        let track = doc
+            .get_first(field_schema.track)
+            .and_then(Value::as_text)
+            .unwrap_or("")
+            .to_string();
+        let year = doc
+            .get_first(field_schema.year)
+            .and_then(Value::as_i64)
+            .unwrap_or(0000) as i32;
+
+        Track {
+            abs_path,
+            size,
+            created_date,
+            modified_date,
+            album,
+            artist,
+            name,
+            track,
+            year,
+            genres,
+        }
+    }
 }
 
 impl TrackJson {
@@ -116,118 +201,98 @@ impl TrackJson {
             .unwrap()
             .as_secs() as i64;
 
-        let mod_at = meta
+        let modified_date = meta
             .modified()
             .unwrap_or(SystemTime::now())
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_secs() as i64;
 
+        let indexed_date = SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as i64;
+
         let track = tag.title().unwrap_or("untitled").to_string();
         let artist = tag.artist().unwrap_or("untitled").to_string();
         let album = tag.album_title().unwrap_or("untitled").to_string();
+        let genre = tag.genre().unwrap_or("").to_string();
+        let duration: f64 = tag.duration().unwrap_or(0.0);
         let year: i32 = tag.year().unwrap_or(0);
 
         // Genre
-        let genres_as_string = tag.genre().unwrap_or("").replace("\0", ";");
-
-        // Split the string by "/,;" chars
-        let genres_array = get_genre_regex()
-            .split(&genres_as_string)
-            .collect::<Vec<_>>();
-
-        // Attempt to store values as ID3v1 Genre keys, fallback to the string value
-        let genres: Vec<String> = genres_array
-            .iter()
-            .map(|&genre_string| {
-                let index_genre = utils::ID3V1_GENRES.iter().position(|&r| r == genre_string);
-                if let Some(index) = index_genre {
-                    return index.to_string();
-                } else {
-                    let genre_without_brackets = get_genre_bracket_regex()
-                        .replace_all(genre_string, "")
-                        .into_owned();
-
-                    return genre_without_brackets.trim().to_string();
-                }
-            })
-            .collect::<Vec<_>>();
+        let genres = genre_string_to_vec(&genre);
 
         TrackJson {
             abs_path,
             created_date,
+            modified_date,
+            indexed_date,
             size,
-            mod_at,
             album,
             artist,
+            genre,
             genres,
             name,
             track,
+            duration,
             year,
         }
     }
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq)]
 pub struct TrackJson {
     pub abs_path: String,
     pub created_date: i64,
+    pub modified_date: i64,
+    pub indexed_date: i64,
     pub size: i64,
-    pub mod_at: i64,
     pub album: String,
     pub artist: String,
+    pub genre: String,
     pub genres: Vec<String>,
     pub name: String,
     pub track: String,
+    pub duration: f64,
     pub year: i32,
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum OrderType {
     Desc = 0,
     Asc = 1,
 }
 
-#[derive(Clone, PartialEq)]
-pub struct Filter {
-    pub tags: Vec<String>,
+#[derive(Clone, Debug, PartialEq)]
+pub struct Filters {
+    pub year_start: Option<i32>,
+    pub year_end: Option<i32>,
+    pub created_date_start: Option<i32>,
+    pub created_date_end: Option<i32>,
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Faceted {
     pub tags: Vec<String>,
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct OrderBy {
     pub field: String,
     pub order_type: OrderType,
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct DocumentSearchRequest {
-    pub id: String,
-    // pub body: String,
+    pub text: String,
     pub fields: Vec<String>,
-    pub filter: Option<Filter>,
-    // pub order: Option<OrderBy>,
-    // pub faceted: Option<Faceted>,
-    // pub page_number: i32,
-    // pub result_per_page: i32,
-    // pub reload: bool
-}
-
-#[derive(Clone, PartialEq)]
-pub struct PokemonSearchRequest {
-    pub id: String,
-    // pub body: String,
-    pub types: Vec<String>,
-    pub genres: Filter,
-    // pub order: Option<OrderBy>,
-    // pub faceted: Option<Faceted>,
-    // pub page_number: i32,
-    // pub result_per_page: i32,
-    // pub reload: bool
+    pub filters: Filters,
+    pub order: Option<OrderBy>,
+    pub faceted: Option<Faceted>,
+    pub page_number: i32,
+    pub result_per_page: i32,
+    pub reload: bool,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -241,15 +306,38 @@ pub struct FacetResults {
     pub facet_results: Vec<FacetResult>,
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
+pub struct ResultScore {
+    pub bm25: f32,
+    // In the case of two equal bm25 scores, booster decides
+    pub booster: f32,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct DocumentResult {
+    pub score: Option<ResultScore>,
+    pub track: Track,
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub struct DocumentSearchResponse {
     pub total: i32,
-    // pub results: Vec<FieldSchema>,
+    pub results: Vec<DocumentResult>,
     pub facets: ::std::collections::HashMap<String, FacetResults>,
     pub page_number: i32,
     pub result_per_page: i32,
     pub query: String,
     /// Is there a next page
     pub next_page: bool,
-    // pub bm25: bool,
+    pub bm25: bool,
+}
+
+pub struct SearchResponse<'a, S> {
+    pub query: &'a str,
+    pub facets_count: FacetCounts,
+    pub facets: Vec<String>,
+    pub top_docs: Vec<(S, DocAddress)>,
+    pub order_by: Option<OrderBy>,
+    pub page_number: i32,
+    pub results_per_page: i32,
 }

@@ -1,6 +1,5 @@
-use std::collections::HashMap;
 use std::fs;
-use std::fs::{read_to_string, File};
+use std::fs::read_to_string;
 
 use std::path::Path;
 use std::time::SystemTime;
@@ -13,10 +12,7 @@ use std::os::windows::fs::MetadataExt;
 use audiotags::Tag;
 use chrono::NaiveDateTime;
 use tantivy::chrono::Utc;
-use tantivy::collector::{Count, FacetCollector, FacetCounts, MultiCollector, TopDocs};
-use tantivy::query::{AllQuery, BooleanQuery, Occur, Query, QueryParser};
-use tantivy::{schema::*, DocAddress};
-use tantivy::{DateTime, Index};
+use tantivy::{schema::*, DateTime, Index, IndexWriter, TantivyError};
 
 use jwalk::{DirEntry, WalkDir};
 
@@ -24,8 +20,12 @@ mod schema;
 mod search_query;
 mod utils;
 
-use crate::schema::{FacetResult, FacetResults, FieldSchema, OrderBy, TrackJson};
-use crate::utils::norm;
+use crate::schema::{
+    DocumentSearchRequest, DocumentSearchResponse, Faceted, FieldSchema, Filters, OrderBy,
+    OrderType, TrackJson,
+};
+use crate::search_query::do_search;
+use crate::utils::{file_ext, norm};
 
 const JSON_DATA_FILE: &str = "./data/audio.json";
 
@@ -34,87 +34,54 @@ const JSON_DATA_FILE: &str = "./data/audio.json";
 const BASE_AUDIO_DIRECTORY: &str =
     "C:\\Users\\lukes\\Github\\rust-adventures\\audio-playground\\audio";
 
-pub struct SearchResponse<'a, S> {
-    pub query: &'a str,
-    pub facets_count: FacetCounts,
-    pub facets: Vec<String>,
-    pub top_docs: Vec<(S, DocAddress)>,
-    pub order_by: Option<OrderBy>,
-    pub page_number: i32,
-    pub results_per_page: i32,
-}
-
-fn facet_count(facet: &str, facets_count: &FacetCounts) -> Vec<FacetResult> {
-    facets_count
-        .top_k(facet, 50)
-        .into_iter()
-        .map(|(facet, count)| FacetResult {
-            tag: facet.to_string(),
-            total: count as i32,
-        })
-        .collect()
-}
-
-fn create_facets(facets: Vec<String>, facets_count: FacetCounts) -> HashMap<String, FacetResults> {
-    facets
-        .into_iter()
-        .map(|facet| (&facets_count, facet))
-        .map(|(facets_count, facet)| (facet_count(&facet, facets_count), facet))
-        .filter(|(r, _)| !r.is_empty())
-        .map(|(facet_results, facet)| (facet, FacetResults { facet_results }))
-        .collect()
-}
-
-fn is_valid_facet(maybe_facet: &str) -> bool {
-    Facet::from_text(maybe_facet)
-        .map_err(|_| println!("Invalid facet: {maybe_facet}"))
-        .is_ok()
-}
-
 fn main() -> tantivy::Result<()> {
-    if true {
+    if false {
         // Fetch audio data and save to the local JSON file
         walk(&norm(BASE_AUDIO_DIRECTORY).to_string());
     }
 
-    if false {
+    if true {
         search();
     }
 
     Ok(())
 }
 
-pub fn file_ext(file_name: &str) -> &str {
-    if !file_name.contains(".") {
-        return "";
-    }
-    file_name.split(".").last().unwrap_or("")
-}
-
-fn search() -> tantivy::Result<()> {
+fn index_data(
+    field_schema: &FieldSchema,
+    mut index_writer: IndexWriter,
+    json_file_path: &str,
+) -> Result<(), TantivyError> {
     // Read JSON from file
-    let json_file_path = Path::new(JSON_DATA_FILE);
-    let json_file_str = read_to_string(json_file_path).expect("file not found");
+    let json_file_path_as_path = Path::new(json_file_path);
+    let json_file_str = read_to_string(json_file_path_as_path).expect("file not found");
     let data: Vec<TrackJson> = serde_json::from_str(&json_file_str).unwrap();
-
-    let field_schema: FieldSchema = FieldSchema::new();
-    let index = Index::create_in_ram(field_schema.schema.clone());
-
-    let mut index_writer = index.writer(30_000_000)?;
 
     println!("Total {} items", data.len());
 
     for item in data.iter() {
         let mut document = Document::default();
+        document.add_text(field_schema.abs_path, &item.abs_path);
         document.add_text(field_schema.title, &item.name);
         document.add_text(field_schema.track, &item.track);
         document.add_text(field_schema.album, &item.album);
         document.add_text(field_schema.artist, &item.artist);
+        document.add_text(field_schema.genre, &item.genre);
         document.add_u64(field_schema.year, item.year as u64);
+        document.add_i64(field_schema.size, item.size);
+        document.add_f64(field_schema.duration, item.duration);
 
         let date_time_value =
             DateTime::from_utc(NaiveDateTime::from_timestamp(item.created_date, 0), Utc);
         document.add_date(field_schema.created_date, date_time_value);
+
+        let date_time_modified_value =
+            DateTime::from_utc(NaiveDateTime::from_timestamp(item.modified_date, 0), Utc);
+        document.add_date(field_schema.modified_date, date_time_modified_value);
+
+        let date_time_indexed_value =
+            DateTime::from_utc(NaiveDateTime::from_timestamp(item.indexed_date, 0), Utc);
+        document.add_date(field_schema.indexed_date, date_time_indexed_value);
 
         let facet_album_string = format!("/album/{}", &item.album);
         document.add_facet(field_schema.facets, Facet::from(&facet_album_string));
@@ -134,45 +101,73 @@ fn search() -> tantivy::Result<()> {
     }
     index_writer.commit()?;
 
+    Ok(())
+}
+
+fn search() -> tantivy::Result<()> {
+    let field_schema: FieldSchema = FieldSchema::new();
+    let index = Index::create_in_ram(field_schema.schema.clone());
+    let mut index_writer = index.writer(30_000_000)?;
+
+    index_data(&field_schema, index_writer, JSON_DATA_FILE)?;
     let reader = index.reader()?;
-    let searcher = reader.searcher();
 
-    let mut query_parser = QueryParser::for_index(
-        &index,
-        vec![field_schema.title, field_schema.artist, field_schema.album],
-    );
-    query_parser.set_field_boost(field_schema.title, 2.0);
+    // Query Variables (will be passed to the method from a FE interface of some sort)
+    let text = "Eminem".to_string();
+    // let facet_strings_for_search = vec!["/genre/7".to_string(), "/year/2020".to_string()];
+    // let facet_strings = vec![
+    //     "/genre".to_string(),
+    //     "/year".to_string(),
+    //     "/album".to_string(),
+    //     "/artist".to_string(),
+    // ];
 
-    // Query Variables
-    let text = "";
-    let facet_strings_for_search =
-        ["/genre/ambient".to_string(), "/year/2003".to_string()].to_vec();
-    let facet_strings = [
-        "/genre".to_string(),
-        // "/genre/metalcore".to_string(),
-        "/year".to_string(),
-        "/album".to_string(),
-        "/artist".to_string(),
-    ]
-    .to_vec();
-    let year_start = 2004;
-    let year_end = 2006;
+    let faceted = Faceted {
+        tags: vec![
+            "/genre".to_string(),
+            "/year".to_string(),
+            "/album".to_string(),
+            "/artist".to_string(),
+        ],
+    };
+    // let year_start: Option<i32> = Some(2004);
+    // let year_end: Option<i32> = Some(2006);
 
-    let created_date_start = 1665060000;
-    let created_date_end = 1665066700;
+    // Order by
+    let order_by_object: OrderBy = OrderBy {
+        field: "created".to_string(),
+        order_type: OrderType::Desc,
+    };
+    let order_by: Option<OrderBy> = Some(order_by_object);
 
-    let limit = 10;
-    let offset = 0;
-    let order_field = field_schema.title;
+    // let created_date_start: Option<i32> = Some(1665060000);
+    // let created_date_end: Option<i32> = Some(1665066700);
 
-    let mut queries: Vec<(Occur, Box<dyn Query>)> = vec![];
-    let main_q = if text.is_empty() {
-        Box::new(AllQuery)
-    } else {
-        query_parser.parse_query(text).unwrap()
+    // let limit = 10;
+    // let offset = 0;
+    let faced_only_flag = true;
+
+    let request = DocumentSearchRequest {
+        text,
+        fields: vec!["body".to_string()],
+        filters: Filters {
+            year_start: Some(1900),
+            year_end: Some(2050),
+            created_date_start: None,
+            created_date_end: None,
+        },
+        faceted: Some(faceted.clone()), // Some(faceted.clone()),
+        order: order_by,
+        page_number: 0,
+        result_per_page: 10,
+        reload: false,
     };
 
-    queries.push((Occur::Must, main_q));
+    println!("request {:?} ", &request);
+    let response: DocumentSearchResponse =
+        do_search(index, reader, field_schema, &request, faced_only_flag);
+
+    println!("response {:?} ", response);
 
     // By Year
     // let year_range_query = Box::new(RangeQuery::new_u64(field_schema.year, year_start..year_end));
@@ -185,81 +180,58 @@ fn search() -> tantivy::Result<()> {
     // ));
     // queries.push((Occur::Must, created_date_range_query));
 
-    let facet_strings_for_search_valid: Vec<String> = facet_strings_for_search
-        .iter()
-        .filter(|s| is_valid_facet(*s))
-        .cloned()
-        .collect();
+    // Facets
+    // let facet_strings_for_search_valid: Vec<String> = facet_strings_for_search
+    //     .iter()
+    //     .filter(|s| is_valid_facet(*s))
+    //     .cloned()
+    //     .collect();
     // queries = build_facets(queries, &field_schema, facet_strings_for_search_valid);
 
-    let query = BooleanQuery::new(queries);
-    let mut multicollector = MultiCollector::new();
+    // let query = BooleanQuery::new(queries);
+    // let mut multicollector = MultiCollector::new();
 
-    let facets = facet_strings
-        .iter()
-        .filter(|s| is_valid_facet(*s))
-        .cloned()
-        .collect();
+    // let facets = facet_strings
+    //     .iter()
+    //     .filter(|s| is_valid_facet(*s))
+    //     .cloned()
+    //     .collect();
 
-    println!("facets {:?} ", facets);
+    // println!("facets {:?} ", facets);
 
-    let mut facet_collector = FacetCollector::for_field(field_schema.facets);
-    for facet in &facets {
-        match Facet::from_text(facet) {
-            Ok(facet) => facet_collector.add_facet(facet),
-            Err(_) => println!("Invalid facet: {}", facet),
-        }
-    }
+    // let mut facet_collector = FacetCollector::for_field(field_schema.facets);
+    // for facet in &facets {
+    //     match Facet::from_text(facet) {
+    //         Ok(facet) => facet_collector.add_facet(facet),
+    //         Err(_) => println!("Invalid facet: {}", facet),
+    //     }
+    // }
 
-    let facet_handler = multicollector.add_collector(facet_collector);
+    // let facet_handler = multicollector.add_collector(facet_collector);
 
-    let topdocs_collector = TopDocs::with_limit(limit).and_offset(offset);
-    // .order_by_u64_field(order_field);
-    let topdocs_handler = multicollector.add_collector(topdocs_collector);
-    let count_handler = multicollector.add_collector(Count);
+    // let topdocs_collector = TopDocs::with_limit(limit).and_offset(offset);
+    // // .order_by_u64_field(order_field);
+    // let topdocs_handler = multicollector.add_collector(topdocs_collector);
+    // let count_handler = multicollector.add_collector(Count);
 
-    let mut multi_fruit = searcher.search(&query, &multicollector).unwrap();
+    // let mut multi_fruit = searcher.search(&query, &multicollector).unwrap();
 
-    let facets_count = facet_handler.extract(&mut multi_fruit);
-    let top_docs = topdocs_handler.extract(&mut multi_fruit);
-    let count = count_handler.extract(&mut multi_fruit);
-    println!("count {:?} \n", count);
+    // let facets_count = facet_handler.extract(&mut multi_fruit);
+    // let top_docs = topdocs_handler.extract(&mut multi_fruit);
+    // let count = count_handler.extract(&mut multi_fruit);
+    // println!("\nTotal items found for query {:?}", count);
 
-    let facets_created = create_facets(facets, facets_count);
-    for (facet_key, facet_top) in facets_created {
-        println!("\n{}", facet_key);
-        for facet_item in facet_top.facet_results {
-            println!(
-                "  {}: {:?} ",
-                facet_item.tag.replace(&facet_key, ""),
-                facet_item.total
-            );
-        }
-    }
-
-    let items_found = &top_docs.len();
-    println!("\nfound {} items", &items_found);
-
-    for (_score, doc_address) in top_docs {
-        let the_doc = searcher.doc(doc_address).ok().unwrap();
-
-        let response_track = the_doc.get_first(field_schema.track);
-        println!("\ntrack {:?}", &response_track.unwrap());
-
-        let response_album = the_doc.get_first(field_schema.album);
-        println!("album {:?}", &response_album.unwrap());
-
-        let response_artist = the_doc.get_first(field_schema.artist);
-        println!("artist {:?}", &response_artist.unwrap());
-
-        let response_facets = the_doc.get_all(field_schema.facets).collect::<Vec<_>>();
-        for type_value in response_facets {
-            let as_facet = type_value.as_facet().unwrap();
-            println!("  {:?}", &as_facet.to_path_string());
-        }
-    }
-
-    println!("found {} items", &items_found);
+    // let facets_created = create_facets(facets, facets_count);
+    // for (facet_key, facet_top) in facets_created {
+    //     println!("\n{}", facet_key);
+    //     for facet_item in facet_top.facet_results {
+    //         println!(
+    //             "  {}: {:?} ",
+    //             facet_item.tag.replace(&facet_key, ""),
+    //             facet_item.total
+    //         );
+    //     }
+    // }
 
     Ok(())
 }
@@ -273,25 +245,13 @@ fn walk(path: &String) {
     generic = generic.process_read_dir(move |_depth, _path, _read_dir_state, children| {
         children.iter_mut().for_each(|dir_entry_result| {
             if let Ok(dir_entry) = dir_entry_result {
-                let curr_path = norm(dir_entry.path().to_str().unwrap_or(""));
+                norm(dir_entry.path().to_str().unwrap_or(""));
             }
         });
     });
 
     let mut all_tracks: Vec<TrackJson> = Vec::new();
     let mut tracks_failed: Vec<String> = Vec::new();
-
-    // let (game_code, len) = loop {
-    //     match loby_matcher(&mut stream) {
-    //         Ok(game_code) => break game_code,
-    //         // Err(e) if e.kind() == ErrorKind::Other && e.to_string() == "wrong game code" => {
-    //         // or just (for ease of use)
-    //         Err(e) if e.to_string() == "wrong game code" => {
-    //             stream.write("Wrong code\n".as_bytes())?;
-    //         }
-    //         Err(e) => return Err(e),
-    //     };
-    // };
 
     for entry in generic {
         cnt += 1;
