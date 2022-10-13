@@ -5,6 +5,7 @@ use std::os::unix::fs::MetadataExt;
 use std::os::windows::fs::MetadataExt;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use crate::reader::{get_duration_for_path, get_track_from_path};
 use crate::utils::{self, genre_string_to_vec};
 use audiotags::AudioTag;
 use chrono::{DateTime, Utc};
@@ -128,23 +129,13 @@ pub struct Track {
     pub name: String,
     pub track: String,
     pub year: u64,
+    pub duration: f64,
+    pub exists: bool,
 }
 
 impl Track {
     pub fn with_document(field_schema: &FieldSchema, doc: Document) -> Self {
         println!("with_document doc {:?} ", doc);
-
-        let id = doc
-            .get_first(field_schema.id)
-            .and_then(Value::as_text)
-            .unwrap_or("")
-            .to_string();
-
-        let genre_string = doc
-            .get_first(field_schema.genre)
-            .and_then(Value::as_text)
-            .unwrap_or("");
-        let genres = genre_string_to_vec(genre_string);
 
         let abs_path = doc
             .get_first(field_schema.abs_path)
@@ -152,58 +143,55 @@ impl Track {
             .unwrap_or("")
             .to_string();
 
-        let size = doc
-            .get_first(field_schema.size)
-            .and_then(Value::as_i64)
-            .unwrap_or(0000) as i64;
+        let duration = get_duration_for_path(&abs_path).unwrap_or(0.0);
+
+        let track_json_option = get_track_from_path(&abs_path);
+
+        if (track_json_option.is_none()) {
+            return Track {
+                id: "".to_string(),
+                abs_path: "".to_string(),
+                size: 0,
+                created_date: 0,
+                modified_date: 0,
+                indexed_date: 0,
+                album: "".to_string(),
+                artist: "".to_string(),
+                name: "".to_string(),
+                track: "".to_string(),
+                year: 0,
+                genres: vec![],
+                duration: 0.0,
+                exists: false,
+            };
+        }
+        let track_json = track_json_option.unwrap();
+
+        let id = doc
+            .get_first(field_schema.id)
+            .and_then(Value::as_text)
+            .unwrap_or("")
+            .to_string();
+
+        let genres = track_json.genres;
+        let size = track_json.size;
+        let album = track_json.album;
+        let artist = track_json.artist;
+        let name = track_json.name;
+        let track = track_json.track;
+        let year = track_json.year;
+
+        let created_date = track_json.created_date;
+        let modified_date = track_json.modified_date;
 
         let now_date_time: &DateTime<Utc> = &chrono::DateTime::<Utc>::MIN_UTC;
 
         // Dates
-        let created_date: i64 = doc
-            .get_first(field_schema.created_date)
-            .and_then(Value::as_date)
-            .unwrap_or(now_date_time)
-            .timestamp();
-
-        let modified_date: i64 = doc
-            .get_first(field_schema.modified_date)
-            .and_then(Value::as_date)
-            .unwrap_or(now_date_time)
-            .timestamp();
-
         let indexed_date: i64 = doc
             .get_first(field_schema.indexed_date)
             .and_then(Value::as_date)
             .unwrap_or(now_date_time)
             .timestamp();
-
-        let album = doc
-            .get_first(field_schema.album)
-            .and_then(Value::as_text)
-            .unwrap_or("")
-            .to_string();
-        let artist = doc
-            .get_first(field_schema.artist)
-            .and_then(Value::as_text)
-            .unwrap_or("")
-            .to_string();
-        let name = doc
-            .get_first(field_schema.title)
-            .and_then(Value::as_text)
-            .unwrap_or("")
-            .to_string();
-        let track = doc
-            .get_first(field_schema.track)
-            .and_then(Value::as_text)
-            .unwrap_or("")
-            .to_string();
-
-        let year_value = doc.get_first(field_schema.year);
-        println!("year_value {:?} ", &year_value);
-
-        let year: u64 = year_value.and_then(Value::as_u64).unwrap_or(0000);
-        println!("year {:?} ", &year);
 
         Track {
             id,
@@ -218,7 +206,24 @@ impl Track {
             track,
             year,
             genres,
+            duration,
+            exists: true,
         }
+
+        // Track {
+        //     id: "".to_string(),
+        //     abs_path: "".to_string(),
+        //     size: 0,
+        //     created_date: 0,
+        //     modified_date: 0,
+        //     indexed_date: 0,
+        //     album: "".to_string(),
+        //     artist: "".to_string(),
+        //     name: "".to_string(),
+        //     track: "".to_string(),
+        //     year: 0,
+        //     genres: vec![],
+        // }
     }
 }
 

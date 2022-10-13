@@ -65,6 +65,8 @@ fn handle_document_with_score(
 ) -> DocumentResult {
     let track = Track::with_document(field_schema, doc);
 
+    // TODO: if track.exists is false, attempt to re-index?
+
     let doc_response = DocumentResult {
         score: score,
         track: track,

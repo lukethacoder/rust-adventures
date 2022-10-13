@@ -1,5 +1,6 @@
 use log::{error, info, trace, warn};
 use std::fs::Metadata;
+use std::io;
 use std::path::Path;
 
 use audiotags::{AudioTag, Tag};
@@ -35,17 +36,31 @@ pub fn get_track_from_path(path_string: &String) -> Option<TrackJson> {
 }
 
 pub fn get_track_from_path_instance(path_string: &String, path: &Path) -> Option<TrackJson> {
-    let metadata: Metadata = path.metadata().unwrap();
+    let metadata_option: io::Result<Metadata> = path.metadata();
+    if metadata_option.is_err() {
+        error!("Error parsing tag {:?}", &path_string);
+        return None;
+    }
+    let metadata = metadata_option.unwrap();
     let ext: &str = file_ext(&path_string);
 
     // audiotags does not support wav files, so we must handle them directly with the ID3 package
     if ext == "wav" {
-        let tag: id3::Tag = id3::Tag::read_from_wav_path(&path_string).unwrap();
-        return Some(TrackJson::new_wav(norm(&path_string), metadata, tag));
+        let tag: Result<id3::Tag, id3::Error> = id3::Tag::read_from_wav_path(&path_string);
+        if tag.is_err() {
+            error!("Error parsing tag {:?}", &path_string);
+            return None;
+        }
+        return Some(TrackJson::new_wav(
+            norm(&path_string),
+            metadata,
+            tag.unwrap(),
+        ));
     } else {
         let tag: Result<Box<dyn AudioTag>, _> = Tag::new().read_from_path(&path_string);
         if tag.is_err() {
             error!("Error parsing tag {:?}", &path_string);
+            return None;
         }
         return Some(TrackJson::new(norm(&path_string), metadata, tag.unwrap()));
     }
