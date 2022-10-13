@@ -4,6 +4,7 @@ use std::time::Duration;
 
 use notify::DebouncedEvent::{Create, Remove, Rename, Write};
 use notify::{watcher, ReadDirectoryChangesWatcher, RecursiveMode, Watcher};
+use walkdir::WalkDir;
 
 use crate::store::LUKES_STORE;
 
@@ -29,6 +30,13 @@ pub fn norm(path: &str) -> String {
 }
 
 fn main() {
+    println!(
+        "{} total existing files",
+        WalkDir::new(FOLDER_TO_WATCH.to_string())
+            .into_iter()
+            .count()
+    );
+
     // do_run()
     // Create a channel to receive the events.
     let (sender, receiver) = channel();
