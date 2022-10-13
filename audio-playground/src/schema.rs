@@ -25,6 +25,7 @@ use tantivy::{
 pub struct FieldSchema {
     pub schema: Schema,
 
+    pub id: Field,
     pub title: Field,
     pub abs_path: Field,
     pub size: Field,
@@ -43,6 +44,7 @@ pub struct FieldSchema {
 
 impl FieldSchema {
     pub fn new() -> Self {
+        println!("FieldSchema::new");
         let mut sb = Schema::builder();
 
         let text_field_indexing =
@@ -50,16 +52,19 @@ impl FieldSchema {
         let text_options = TextOptions::default().set_indexing_options(text_field_indexing);
 
         let num_options: NumericOptions = NumericOptions::default()
+            .set_stored()
             .set_indexed()
             .set_fast(Cardinality::SingleValue);
 
         let date_options = NumericOptions::default()
+            .set_stored()
             .set_indexed()
             .set_fast(Cardinality::SingleValue);
 
+        let id = sb.add_text_field("id", STRING | STORED);
         let abs_path = sb.add_text_field("abs_path", STRING | STORED);
         let size = sb.add_i64_field("size", num_options.clone());
-        let title = sb.add_text_field("title", text_options.clone());
+        let title = sb.add_text_field("title", STRING | STORED);
         let track = sb.add_text_field("track", STRING | STORED);
         let artist = sb.add_text_field("artist", STRING | STORED);
         let album = sb.add_text_field("album", STRING | STORED);
@@ -80,8 +85,11 @@ impl FieldSchema {
 
         let schema = sb.build();
 
+        println!("FieldSchema::new end");
+
         FieldSchema {
             schema,
+            id,
             abs_path,
             size,
             title,
@@ -108,6 +116,7 @@ impl Default for FieldSchema {
 
 #[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq)]
 pub struct Track {
+    pub id: String,
     pub abs_path: String,
     pub created_date: i64,
     pub modified_date: i64,
@@ -118,11 +127,19 @@ pub struct Track {
     pub genres: Vec<String>,
     pub name: String,
     pub track: String,
-    pub year: i32,
+    pub year: u64,
 }
 
 impl Track {
     pub fn with_document(field_schema: &FieldSchema, doc: Document) -> Self {
+        println!("with_document doc {:?} ", doc);
+
+        let id = doc
+            .get_first(field_schema.id)
+            .and_then(Value::as_text)
+            .unwrap_or("")
+            .to_string();
+
         let genre_string = doc
             .get_first(field_schema.genre)
             .and_then(Value::as_text)
@@ -134,6 +151,7 @@ impl Track {
             .and_then(Value::as_text)
             .unwrap_or("")
             .to_string();
+
         let size = doc
             .get_first(field_schema.size)
             .and_then(Value::as_i64)
@@ -146,19 +164,19 @@ impl Track {
             .get_first(field_schema.created_date)
             .and_then(Value::as_date)
             .unwrap_or(now_date_time)
-            .timestamp_millis();
+            .timestamp();
 
         let modified_date: i64 = doc
             .get_first(field_schema.modified_date)
             .and_then(Value::as_date)
             .unwrap_or(now_date_time)
-            .timestamp_millis();
+            .timestamp();
 
         let indexed_date: i64 = doc
             .get_first(field_schema.indexed_date)
             .and_then(Value::as_date)
             .unwrap_or(now_date_time)
-            .timestamp_millis();
+            .timestamp();
 
         let album = doc
             .get_first(field_schema.album)
@@ -180,12 +198,15 @@ impl Track {
             .and_then(Value::as_text)
             .unwrap_or("")
             .to_string();
-        let year = doc
-            .get_first(field_schema.year)
-            .and_then(Value::as_u64)
-            .unwrap_or(0000) as i32;
+
+        let year_value = doc.get_first(field_schema.year);
+        println!("year_value {:?} ", &year_value);
+
+        let year: u64 = year_value.and_then(Value::as_u64).unwrap_or(0000);
+        println!("year {:?} ", &year);
 
         Track {
+            id,
             abs_path,
             size,
             created_date,
@@ -212,34 +233,33 @@ impl TrackJson {
 
         let name = utils::path2name(path.clone());
 
-        // create a unique id to check for existing index items
-        // TODO: find a more unique option than the file name (and not the file path)
-        let id = slugify(name.clone());
-
         let created_date = meta
             .created()
             .unwrap_or(SystemTime::now())
             .duration_since(UNIX_EPOCH)
             .unwrap()
-            .as_secs() as i64;
+            .as_millis() as i64;
 
         let modified_date = meta
             .modified()
             .unwrap_or(SystemTime::now())
             .duration_since(UNIX_EPOCH)
             .unwrap()
-            .as_secs() as i64;
+            .as_millis() as i64;
 
         let indexed_date = SystemTime::now()
             .duration_since(SystemTime::UNIX_EPOCH)
             .unwrap()
-            .as_secs() as i64;
+            .as_millis() as i64;
+
+        // create a unique id to check for existing index items
+        let id = slugify(format!("{}-{}", &created_date, name.clone()));
 
         let track = tag.title().unwrap_or("untitled").to_string();
         let artist = tag.artist().unwrap_or("untitled").to_string();
         let album = tag.album().unwrap_or("untitled").to_string();
         let genre = tag.genre().unwrap_or("").to_string();
-        let year: i32 = tag.year().unwrap_or(0);
+        let year: u64 = tag.year().unwrap_or(0) as u64;
 
         // NOTE: we're not using tag.duration() as this queries for the ID3 value which is usually null
         // instead we will query for the duration at indexing run time
@@ -275,33 +295,33 @@ impl TrackJson {
 
         let name = utils::path2name(path.clone());
 
-        // create a unique id to check for existing index items
-        let id = slugify(path.clone());
-
         let created_date = meta
             .created()
             .unwrap_or(SystemTime::now())
             .duration_since(UNIX_EPOCH)
             .unwrap()
-            .as_secs() as i64;
+            .as_millis() as i64;
 
         let modified_date = meta
             .modified()
             .unwrap_or(SystemTime::now())
             .duration_since(UNIX_EPOCH)
             .unwrap()
-            .as_secs() as i64;
+            .as_millis() as i64;
 
         let indexed_date = SystemTime::now()
             .duration_since(SystemTime::UNIX_EPOCH)
             .unwrap()
-            .as_secs() as i64;
+            .as_millis() as i64;
+
+        // create a unique id to check for existing index items
+        let id = slugify(format!("{}-{}", &created_date, name.clone()));
 
         let track = tag.title().unwrap_or("untitled").to_string();
         let artist = tag.artist().unwrap_or("untitled").to_string();
         let album = tag.album_title().unwrap_or("untitled").to_string();
         let genre = tag.genre().unwrap_or("").to_string();
-        let year: i32 = tag.year().unwrap_or(0);
+        let year: u64 = tag.year().unwrap_or(0) as u64;
 
         // NOTE: we're not using tag.duration() as this queries for the ID3 value which is usually null
         // instead we will query for the duration at indexing run time
@@ -344,7 +364,7 @@ pub struct TrackJson {
     pub name: String,
     pub track: String,
     pub duration: f64,
-    pub year: i32,
+    pub year: u64,
 }
 
 #[derive(Clone, Debug, PartialEq)]

@@ -19,10 +19,12 @@ use tantivy::{schema::*, DateTime, Index, IndexWriter, TantivyError};
 
 use jwalk::{DirEntry, WalkDir};
 
+mod reader;
 mod schema;
 mod search_query;
 mod utils;
 
+use crate::reader::{get_duration_for_path, get_track_from_path};
 use crate::schema::{
     DocumentSearchRequest, DocumentSearchResponse, Faceted, FieldSchema, Filters, OrderBy,
     OrderType, TrackJson,
@@ -65,10 +67,9 @@ fn index_data(
 
     println!("Total {} items", data.len());
 
-    let mut tracks_failed: Vec<String> = Vec::new();
-
     for item in data.iter() {
         let mut document = Document::default();
+        document.add_text(field_schema.id, &item.id);
         document.add_text(field_schema.abs_path, &item.abs_path);
         document.add_text(field_schema.title, &item.name);
         document.add_text(field_schema.track, &item.track);
@@ -78,16 +79,22 @@ fn index_data(
         document.add_u64(field_schema.year, item.year as u64);
         document.add_i64(field_schema.size, item.size);
 
-        let date_time_value =
-            DateTime::from_utc(NaiveDateTime::from_timestamp(item.created_date, 0), Utc);
+        let date_time_value = DateTime::from_utc(
+            NaiveDateTime::from_timestamp(item.created_date / 1000, 0),
+            Utc,
+        );
         document.add_date(field_schema.created_date, date_time_value);
 
-        let date_time_modified_value =
-            DateTime::from_utc(NaiveDateTime::from_timestamp(item.modified_date, 0), Utc);
+        let date_time_modified_value = DateTime::from_utc(
+            NaiveDateTime::from_timestamp(item.modified_date / 1000, 0),
+            Utc,
+        );
         document.add_date(field_schema.modified_date, date_time_modified_value);
 
-        let date_time_indexed_value =
-            DateTime::from_utc(NaiveDateTime::from_timestamp(item.indexed_date, 0), Utc);
+        let date_time_indexed_value = DateTime::from_utc(
+            NaiveDateTime::from_timestamp(item.indexed_date / 1000, 0),
+            Utc,
+        );
         document.add_date(field_schema.indexed_date, date_time_indexed_value);
 
         let facet_album_string = format!("/album/{}", &item.album);
@@ -104,35 +111,11 @@ fn index_data(
             document.add_facet(field_schema.facets, Facet::from(&facet_string));
         }
 
-        // Duration is usually not stored in ID3 tags, so lets calculate it from the audio file itself
-        let path = Path::new(&item.abs_path);
-        let ext = file_ext(&item.abs_path);
-
-        // `wav` files don't seem to play nice here, so just ignore them for now
-        if ext != "wav" {
-            let header = Header::read_from_path(&path, ParseMode::PreferVbrHeaders);
-            if header.is_err() {
-                tracks_failed.push(item.abs_path.clone());
-            } else {
-                document.add_f64(
-                    field_schema.duration,
-                    header.unwrap().total_duration.as_secs_f64(),
-                );
-            }
-        } else {
-            println!("ignoring wav file duration calculation {:?}", &item.name);
+        if let Some(d) = get_duration_for_path(&item.abs_path) {
+            document.add_f64(field_schema.duration, d);
         }
 
         index_writer.add_document(document)?;
-    }
-    println!(
-        "Failed to read duration on {} file(s) ",
-        &tracks_failed.len()
-    );
-    if !tracks_failed.is_empty() {
-        for track_failed in tracks_failed {
-            println!("  track failed {} ", track_failed);
-        }
     }
 
     index_writer.commit()?;
@@ -145,8 +128,8 @@ fn search() -> tantivy::Result<()> {
 
     let field_schema: FieldSchema = FieldSchema::new();
 
-    let index_path = Path::new(INDEX_CACHE_DIRECTORY);
-    let index;
+    let index_path: &Path = Path::new(INDEX_CACHE_DIRECTORY);
+    let index: Index;
     if index_path.exists() {
         index = Index::open_in_dir(&index_path).ok().unwrap();
     } else {
@@ -157,7 +140,7 @@ fn search() -> tantivy::Result<()> {
     }
 
     // let index = Index::create_in_ram(field_schema.schema.clone());
-    let mut index_writer = index.writer(30_000_000)?;
+    let index_writer: IndexWriter = index.writer(30_000_000)?;
 
     index_data(&field_schema, index_writer, JSON_DATA_FILE)?;
     let reader = index
@@ -322,38 +305,31 @@ fn walk(path: &String) {
         }
 
         let en: DirEntry<((), ())> = entry.unwrap();
-        let metadata = en.metadata().unwrap();
         let buf = en.path();
         let file_type = en.file_type();
         let is_dir = file_type.is_dir();
 
-        let path = buf.to_str().unwrap().to_string();
+        let path_string = buf.to_str().unwrap().to_string();
         let name = en.file_name().to_str().unwrap();
         let ext = file_ext(name);
 
         let allowed_types = ["mp3", "m4a", "mp4", "flac", "wav"];
 
         if !is_dir & allowed_types.contains(&ext) {
-            // audiotags does not support wav files, so we must handle them directly with the ID3 package
-            if ext == "wav" {
-                let tag = id3::Tag::read_from_wav_path(&path).unwrap();
-                all_tracks.push(TrackJson::new_wav(norm(&path), metadata, tag));
+            if let Some(t) = get_track_from_path(&path_string) {
+                all_tracks.push(t);
             } else {
-                let tag = Tag::new().read_from_path(&path);
-
-                if tag.is_err() {
-                    tracks_failed.push(path);
-                    continue;
-                }
-                all_tracks.push(TrackJson::new(norm(&path), metadata, tag.unwrap()));
+                tracks_failed.push(path_string)
             }
         }
     }
 
-    println!("Failed to index {} file(s) ", &tracks_failed.len());
     if !tracks_failed.is_empty() {
-        for track_failed in tracks_failed {
-            println!("  track failed {} ", track_failed);
+        println!("Failed to index {} file(s) ", &tracks_failed.len());
+        if !tracks_failed.is_empty() {
+            for track_failed in tracks_failed {
+                println!("  track failed {} ", track_failed);
+            }
         }
     }
     let end = SystemTime::now();
