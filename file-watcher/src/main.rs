@@ -24,6 +24,10 @@ fn log_store() {
     println!("  writes {:?} ", store.writes.len());
 }
 
+pub fn norm(path: &str) -> String {
+    str::replace(path, "\\", "/")
+}
+
 fn main() {
     // do_run()
     // Create a channel to receive the events.
@@ -46,32 +50,28 @@ fn main() {
                             LUKES_STORE
                                 .write()
                                 .unwrap()
-                                .create(path_buff.to_str().unwrap().to_string());
+                                .create(norm(path_buff.to_str().unwrap()));
                             log_store()
                         }
                         Remove(path_buff) => {
                             LUKES_STORE
                                 .write()
                                 .unwrap()
-                                .remove(path_buff.to_str().unwrap().to_string());
+                                .remove(norm(path_buff.to_str().unwrap()));
                             log_store()
                         }
                         Rename(source, destination) => {
-                            let source_string: String = source.to_str().unwrap().to_string();
-                            let destination_string: String =
-                                destination.to_str().unwrap().to_string();
-
-                            LUKES_STORE
-                                .write()
-                                .unwrap()
-                                .rename(source_string, destination_string);
+                            LUKES_STORE.write().unwrap().rename(
+                                norm(source.to_str().unwrap()),
+                                norm(destination.to_str().unwrap()),
+                            );
                             log_store()
                         }
                         Write(path_buff) => {
                             LUKES_STORE
                                 .write()
                                 .unwrap()
-                                .write(path_buff.to_str().unwrap().to_string());
+                                .write(norm(path_buff.to_str().unwrap()));
                             log_store()
                         }
                         _ => println!("other event? {:?}", event), // don't care about other types

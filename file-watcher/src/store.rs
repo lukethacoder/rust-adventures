@@ -1,12 +1,10 @@
 use std::sync::RwLock;
 
-use serde::{Deserialize, Serialize};
-
 lazy_static! {
     pub static ref LUKES_STORE: RwLock<LukesStore> = RwLock::new(LukesStore::new());
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug)]
 pub struct LukesStore {
     pub paths: Vec<String>,
     pub creates: Vec<String>,
