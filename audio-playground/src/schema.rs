@@ -24,6 +24,7 @@ use tantivy::collector::TopDocs;
 use tantivy::query::AllQuery;
 use tantivy::query::Query;
 use tantivy::query::QueryParser;
+use tantivy::schema::FAST;
 use tantivy::{
     collector::FacetCounts,
     fastfield::FastValue,
@@ -81,7 +82,7 @@ impl SearchWatcher {
 
         println!("Total {} items", response.total);
         for item in response.results {
-            println!("{} - ({})", item.track.name, item.track.abs_path);
+            println!("🎵 {} - ({})", item.track.name, item.track.id);
         }
         // let response_json = serde_json::to_string(&response)?;
 
@@ -216,7 +217,28 @@ impl SearchWatcher {
         }
     }
 
+    pub fn is_existing_by_path(&self, track_path: &str) -> bool {
+        let query_parser = {
+            let query_parser =
+                QueryParser::for_index(&self.index, vec![self.field_schema.abs_path]);
+            query_parser
+        };
+
+        let searcher = self.reader.searcher();
+
+        let path_query = format!("\"{}\"", &track_path);
+        let query = query_parser.parse_query(path_query.as_str()).unwrap();
+        let count = searcher.search(&query, &Count).unwrap();
+
+        count > 0
+    }
+
     pub fn add(&self, item: &TrackJson) {
+        // quick duplicate check
+        if self.is_existing_by_path(&item.abs_path) {
+            return;
+        }
+
         let mut document = Document::default();
         document.add_text(self.field_schema.id, &item.id);
         document.add_text(self.field_schema.abs_path, &item.abs_path);
@@ -323,7 +345,7 @@ impl FieldSchema {
             .set_indexed()
             .set_fast(Cardinality::SingleValue);
 
-        let id = sb.add_text_field("id", STRING | STORED);
+        let id = sb.add_bytes_field("id", STORED | FAST);
         let abs_path = sb.add_text_field("abs_path", STRING | STORED);
         let size = sb.add_i64_field("size", num_options.clone());
         let title = sb.add_text_field("title", text_options.clone());
@@ -396,8 +418,6 @@ pub struct Track {
 
 impl Track {
     pub fn with_document(field_schema: &FieldSchema, doc: Document) -> Self {
-        // println!("with_document doc {:?} ", doc);
-
         let abs_path = doc
             .get_first(field_schema.abs_path)
             .and_then(Value::as_text)
@@ -470,21 +490,6 @@ impl Track {
             duration,
             exists: true,
         }
-
-        // Track {
-        //     id: "".to_string(),
-        //     abs_path: "".to_string(),
-        //     size: 0,
-        //     created_date: 0,
-        //     modified_date: 0,
-        //     indexed_date: 0,
-        //     album: "".to_string(),
-        //     artist: "".to_string(),
-        //     name: "".to_string(),
-        //     track: "".to_string(),
-        //     year: 0,
-        //     genres: vec![],
-        // }
     }
 }
 

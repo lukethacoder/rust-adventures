@@ -135,7 +135,7 @@ fn watch_search() {
     for line in io::stdin().lines() {
         match line {
             Ok(line) => {
-                println!("searching for {:?} ", line);
+                println!("🔎 searching for {:?}\n", line);
 
                 // Query Variables (will be passed to the method from a FE interface of some sort)
                 let mut text: String = "".to_string();
@@ -177,7 +177,7 @@ fn watch_search() {
                 };
 
                 search_watcher.search(request);
-                println!("Search again? ...\n");
+                println!("\nSearch again? ...\n");
             }
             Err(err) => println!("IO error: {}", err),
         }
