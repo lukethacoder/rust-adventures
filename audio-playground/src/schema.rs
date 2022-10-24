@@ -1,26 +1,286 @@
+use std::fs;
+use std::fs::read_to_string;
 use std::fs::Metadata;
 #[cfg(unix)]
 use std::os::unix::fs::MetadataExt;
 #[cfg(windows)]
 use std::os::windows::fs::MetadataExt;
+use std::path::Path;
+use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::reader::{get_duration_for_path, get_track_from_path};
-use crate::utils::{self, genre_string_to_vec};
+use crate::search_query::{convert_bm25_order, convert_int_order, create_query, do_search};
+use crate::utils::{self, adapt_text, genre_string_to_vec, get_order_field, is_valid_facet};
 use audiotags::AudioTag;
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, NaiveDateTime, Utc};
 use id3::TagLike;
 use serde::{Deserialize, Serialize};
 use slug::slugify;
+use tantivy::collector::Count;
+use tantivy::collector::FacetCollector;
+use tantivy::collector::MultiCollector;
+use tantivy::collector::TopDocs;
+use tantivy::query::AllQuery;
+use tantivy::query::Query;
+use tantivy::query::QueryParser;
 use tantivy::{
     collector::FacetCounts,
     fastfield::FastValue,
     schema::{
-        Cardinality, FacetOptions, Field, IndexRecordOption, NumericOptions, Schema,
+        Cardinality, Facet, FacetOptions, Field, IndexRecordOption, NumericOptions, Schema,
         TextFieldIndexing, TextOptions, Value, STORED, STRING,
     },
-    DocAddress, Document,
+    DocAddress, Document, Index, IndexReader, IndexWriter, TantivyError,
 };
+
+pub struct SearchWatcher {
+    pub field_schema: FieldSchema,
+    pub index: Index,
+    pub reader: IndexReader,
+    pub writer: Arc<Mutex<IndexWriter>>,
+}
+
+const JSON_DATA_FILE: &str = "./data/audio.json";
+
+impl SearchWatcher {
+    pub fn new(index_cache_directory: &str) -> Self {
+        let field_schema = FieldSchema::new();
+
+        let index_path: &Path = Path::new(index_cache_directory);
+        let index;
+        if index_path.exists() {
+            index = Index::open_in_dir(&index_path).ok().unwrap();
+        } else {
+            fs::create_dir(index_path).ok();
+            index = Index::create_in_dir(&index_path, field_schema.schema.clone())
+                .ok()
+                .unwrap();
+        }
+
+        let writer = Arc::new(Mutex::new(
+            index.writer_with_num_threads(2, 140_000_000).unwrap(),
+        ));
+
+        let reader = index
+            .reader_builder()
+            .reload_policy(tantivy::ReloadPolicy::OnCommit)
+            .try_into()
+            .unwrap();
+
+        SearchWatcher {
+            field_schema,
+            index,
+            reader,
+            writer,
+        }
+    }
+    pub fn search(&self, request: DocumentSearchRequest) -> tantivy::Result<()> {
+        let faced_only_flag = true;
+        let response: DocumentSearchResponse = self.do_search(&request, faced_only_flag);
+
+        println!("Total {} items", response.total);
+        for item in response.results {
+            println!("{} - ({})", item.track.name, item.track.abs_path);
+        }
+        // let response_json = serde_json::to_string(&response)?;
+
+        Ok(())
+    }
+    pub fn do_search(
+        &self,
+        request: &DocumentSearchRequest,
+        facet_only_flag: bool,
+    ) -> DocumentSearchResponse {
+        let query_parser = {
+            let query_parser = QueryParser::for_index(
+                &self.index,
+                vec![
+                    self.field_schema.title,
+                    self.field_schema.artist,
+                    self.field_schema.album,
+                    self.field_schema.track,
+                ],
+            );
+            query_parser
+        };
+        let text = adapt_text(&query_parser, &request.text);
+
+        let query = if !request.text.is_empty() {
+            create_query(&query_parser, request, &self.field_schema, &text)
+        } else {
+            Box::new(AllQuery) as Box<dyn Query>
+        };
+
+        // Offset to search from
+        let results = request.result_per_page as usize;
+
+        let offset = results * request.page_number as usize;
+
+        let extra_result = results + 1;
+        let order_field = get_order_field(&self.field_schema, &request.order);
+        let facets = request
+            .faceted
+            .as_ref()
+            .map(|v| {
+                v.tags
+                    .iter()
+                    .filter(|s| is_valid_facet(*s))
+                    .cloned()
+                    .collect()
+            })
+            .unwrap_or_default();
+
+        let mut facet_collector = FacetCollector::for_field(self.field_schema.facets);
+        for facet in &facets {
+            match Facet::from_text(facet) {
+                Ok(facet) => facet_collector.add_facet(facet),
+                Err(_) => println!("Invalid facet: {}", facet),
+            }
+        }
+
+        let searcher = self.reader.searcher();
+
+        // TODO: use request.filters to filter by year range and date ranges
+
+        match order_field {
+            _ if !facet_only_flag => {
+                // Just a facet search
+                let facets_count = searcher.search(&query, &facet_collector).unwrap();
+                convert_bm25_order(
+                    self.field_schema.clone(),
+                    SearchResponse {
+                        facets,
+                        query: &text,
+                        top_docs: vec![],
+                        facets_count,
+                        order_by: request.order.clone(),
+                        page_number: request.page_number,
+                        results_per_page: results as i32,
+                    },
+                    &searcher,
+                )
+            }
+            Some(order_field) => {
+                let mut multicollector = MultiCollector::new();
+                let facet_handler = multicollector.add_collector(facet_collector);
+                let count_handler = multicollector.add_collector(Count);
+
+                let topdocs_collector = TopDocs::with_limit(extra_result)
+                    .and_offset(offset)
+                    .order_by_u64_field(order_field);
+                let topdocs_handler = multicollector.add_collector(topdocs_collector);
+                let mut multi_fruit = searcher.search(&query, &multicollector).unwrap();
+                let facets_count = facet_handler.extract(&mut multi_fruit);
+                let top_docs = topdocs_handler.extract(&mut multi_fruit);
+
+                let count = count_handler.extract(&mut multi_fruit);
+
+                convert_int_order(
+                    self.field_schema.clone(),
+                    SearchResponse {
+                        facets_count,
+                        facets,
+                        top_docs,
+                        query: &text,
+                        order_by: request.order.clone(),
+                        page_number: request.page_number,
+                        results_per_page: results as i32,
+                    },
+                    &searcher,
+                )
+            }
+            None => {
+                let mut multicollector = MultiCollector::new();
+                let facet_handler = multicollector.add_collector(facet_collector);
+                let topdocs_collector = TopDocs::with_limit(extra_result).and_offset(offset);
+                let topdocs_handler = multicollector.add_collector(topdocs_collector);
+                let mut multi_fruit = searcher.search(&query, &multicollector).unwrap();
+                let facets_count = facet_handler.extract(&mut multi_fruit);
+                let top_docs = topdocs_handler.extract(&mut multi_fruit);
+
+                convert_bm25_order(
+                    self.field_schema.clone(),
+                    SearchResponse {
+                        facets_count,
+                        facets,
+                        top_docs,
+                        query: &text,
+                        order_by: request.order.clone(),
+                        page_number: request.page_number,
+                        results_per_page: results as i32,
+                    },
+                    &searcher,
+                )
+            }
+        }
+    }
+
+    pub fn add(&self, item: &TrackJson) {
+        let mut document = Document::default();
+        document.add_text(self.field_schema.id, &item.id);
+        document.add_text(self.field_schema.abs_path, &item.abs_path);
+        document.add_text(self.field_schema.title, &item.name);
+        document.add_text(self.field_schema.track, &item.track);
+        document.add_text(self.field_schema.album, &item.album);
+        document.add_text(self.field_schema.artist, &item.artist);
+        document.add_text(self.field_schema.genre, &item.genre);
+        document.add_u64(self.field_schema.year, item.year as u64);
+        document.add_i64(self.field_schema.size, item.size);
+
+        let date_time_value = DateTime::from_utc(
+            NaiveDateTime::from_timestamp(item.created_date / 1000, 0),
+            Utc,
+        );
+        document.add_date(self.field_schema.created_date, date_time_value);
+
+        let date_time_modified_value = DateTime::from_utc(
+            NaiveDateTime::from_timestamp(item.modified_date / 1000, 0),
+            Utc,
+        );
+        document.add_date(self.field_schema.modified_date, date_time_modified_value);
+
+        let date_time_indexed_value = DateTime::from_utc(
+            NaiveDateTime::from_timestamp(item.indexed_date / 1000, 0),
+            Utc,
+        );
+        document.add_date(self.field_schema.indexed_date, date_time_indexed_value);
+
+        let facet_album_string = format!("/album/{}", &item.album);
+        document.add_facet(self.field_schema.facets, Facet::from(&facet_album_string));
+
+        let facet_artist_string = format!("/artist/{}", &item.artist);
+        document.add_facet(self.field_schema.facets, Facet::from(&facet_artist_string));
+
+        let facet_year_string = format!("/year/{}", &item.year);
+        document.add_facet(self.field_schema.facets, Facet::from(&facet_year_string));
+
+        for genre in &item.genres {
+            let facet_string = format!("/genre/{}", &genre);
+            document.add_facet(self.field_schema.facets, Facet::from(&facet_string));
+        }
+
+        if let Some(d) = get_duration_for_path(&item.abs_path) {
+            document.add_f64(self.field_schema.duration, d);
+        }
+
+        self.writer.lock().unwrap().add_document(document).unwrap();
+    }
+    pub fn initial_index(&self, json_file_path: &str) {
+        // Read JSON from file
+        let json_file_path_as_path = Path::new(json_file_path);
+        let json_file_str = read_to_string(json_file_path_as_path).expect("file not found");
+        let data: Vec<TrackJson> = serde_json::from_str(&json_file_str).unwrap();
+
+        println!("Indexing {} items", data.len());
+        for item in data.iter() {
+            self.add(item);
+        }
+        println!("Total {} items indexed", data.len());
+
+        self.writer.lock().unwrap().commit().unwrap();
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct FieldSchema {
@@ -45,12 +305,13 @@ pub struct FieldSchema {
 
 impl FieldSchema {
     pub fn new() -> Self {
-        println!("FieldSchema::new");
         let mut sb = Schema::builder();
 
         let text_field_indexing =
-            TextFieldIndexing::default().set_index_option(IndexRecordOption::WithFreqs);
-        let text_options = TextOptions::default().set_indexing_options(text_field_indexing);
+            TextFieldIndexing::default().set_index_option(IndexRecordOption::WithFreqsAndPositions);
+        let text_options = TextOptions::default()
+            .set_stored()
+            .set_indexing_options(text_field_indexing);
 
         let num_options: NumericOptions = NumericOptions::default()
             .set_stored()
@@ -65,11 +326,11 @@ impl FieldSchema {
         let id = sb.add_text_field("id", STRING | STORED);
         let abs_path = sb.add_text_field("abs_path", STRING | STORED);
         let size = sb.add_i64_field("size", num_options.clone());
-        let title = sb.add_text_field("title", STRING | STORED);
-        let track = sb.add_text_field("track", STRING | STORED);
-        let artist = sb.add_text_field("artist", STRING | STORED);
-        let album = sb.add_text_field("album", STRING | STORED);
-        let genre = sb.add_text_field("genre", STRING | STORED);
+        let title = sb.add_text_field("title", text_options.clone());
+        let track = sb.add_text_field("track", text_options.clone());
+        let artist = sb.add_text_field("artist", text_options.clone());
+        let album = sb.add_text_field("album", text_options.clone());
+        let genre = sb.add_text_field("genre", text_options.clone());
         let duration = sb.add_f64_field("duration", num_options.clone());
         let year = sb.add_u64_field("year", num_options.clone());
 
@@ -135,7 +396,7 @@ pub struct Track {
 
 impl Track {
     pub fn with_document(field_schema: &FieldSchema, doc: Document) -> Self {
-        println!("with_document doc {:?} ", doc);
+        // println!("with_document doc {:?} ", doc);
 
         let abs_path = doc
             .get_first(field_schema.abs_path)
@@ -147,7 +408,7 @@ impl Track {
 
         let track_json_option = get_track_from_path(&abs_path);
 
-        if (track_json_option.is_none()) {
+        if track_json_option.is_none() {
             return Track {
                 id: "".to_string(),
                 abs_path: "".to_string(),

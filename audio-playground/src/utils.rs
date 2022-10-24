@@ -122,6 +122,16 @@ pub fn get_order_field(
     }
 }
 
+pub fn subs(str: &str) -> Vec<String> {
+    if let Ok(paths) = std::fs::read_dir(str) {
+        return paths
+            .into_iter()
+            .map(|x| x.unwrap().path().to_str().unwrap().to_string())
+            .collect();
+    }
+    vec![]
+}
+
 const ID3V1_GENRES: [&str; 192] = [
     "Blues",
     "Classic Rock",

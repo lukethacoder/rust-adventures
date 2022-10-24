@@ -12,7 +12,7 @@ use super::schema::{DocumentSearchRequest, DocumentSearchResponse, FieldSchema, 
 pub fn create_query(
     parser: &QueryParser,
     search: &DocumentSearchRequest,
-    schema: &FieldSchema,
+    field_schema: &FieldSchema,
     text: &str,
 ) -> Box<dyn Query> {
     let mut queries: Vec<(Occur, Box<dyn Query>)> = vec![];
@@ -25,21 +25,30 @@ pub fn create_query(
     queries.push((Occur::Must, main_q));
 
     // By Year
-    // let year_range_query = Box::new(RangeQuery::new_u64(field_schema.year, year_start..year_end));
-    // queries.push((Occur::Must, year_range_query));
+    if search.filters.year_start.is_some() || search.filters.year_end.is_some() {
+        let year_range_query = Box::new(RangeQuery::new_u64(
+            field_schema.year,
+            (search.filters.year_start.unwrap_or(0000) as u64)
+                ..(search.filters.year_end.unwrap_or(9999) as u64),
+        ));
+        queries.push((Occur::Must, year_range_query));
+    }
 
     // By Created Date
-    // let created_date_range_query = Box::new(RangeQuery::new_u64(
-    //     field_schema.created_date,
-    //     created_date_start..created_date_end,
-    // ));
-    // queries.push((Occur::Must, created_date_range_query));
+    if search.filters.created_date_start.is_some() || search.filters.created_date_end.is_some() {
+        let created_date_range_query = Box::new(RangeQuery::new_u64(
+            field_schema.created_date,
+            (search.filters.created_date_start.unwrap_or(0) as u64)
+                ..(search.filters.created_date_end.unwrap_or(i32::MAX) as u64),
+        ));
+        queries.push((Occur::Must, created_date_range_query));
+    }
 
     // Fields
     // search.fields.iter().for_each(|value| {
     //     let facet_key: String = format!("/{}", value);
     //     let facet = Facet::from(facet_key.as_str());
-    //     let facet_term = Term::from_facet(schema.field, &facet);
+    //     let facet_term = Term::from_facet(field_schema.field, &facet);
     //     let facet_term_query = TermQuery::new(facet_term, IndexRecordOption::Basic);
     //     queries.push((Occur::Must, Box::new(facet_term_query)));
     // });
@@ -51,10 +60,11 @@ pub fn create_query(
         .flat_map(|f| f.tags.iter())
         .for_each(|value| {
             let facet = Facet::from(value.as_str());
-            let facet_term = Term::from_facet(schema.facets, &facet);
+            let facet_term = Term::from_facet(field_schema.facets, &facet);
             let facet_term_query = TermQuery::new(facet_term, IndexRecordOption::Basic);
             queries.push((Occur::Should, Box::new(facet_term_query)));
         });
+
     Box::new(BooleanQuery::new(queries))
 }
 
@@ -74,7 +84,7 @@ fn handle_document_with_score(
     doc_response
 }
 
-fn convert_int_order(
+pub fn convert_int_order(
     field_schema: FieldSchema,
     response: SearchResponse<u64>,
     searcher: &Searcher,
@@ -125,7 +135,7 @@ fn convert_int_order(
     }
 }
 
-fn convert_bm25_order(
+pub fn convert_bm25_order(
     field_schema: FieldSchema,
     response: SearchResponse<f32>,
     searcher: &Searcher,

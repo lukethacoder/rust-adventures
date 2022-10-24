@@ -27,7 +27,7 @@ mod utils;
 use crate::reader::{get_duration_for_path, get_track_from_path};
 use crate::schema::{
     DocumentSearchRequest, DocumentSearchResponse, Faceted, FieldSchema, Filters, OrderBy,
-    OrderType, TrackJson,
+    OrderType, SearchWatcher, TrackJson,
 };
 use crate::search_query::do_search;
 use crate::utils::{file_ext, norm};
@@ -48,8 +48,12 @@ fn main() -> tantivy::Result<()> {
         walk(&norm(BASE_AUDIO_DIRECTORY).to_string());
     }
 
-    if true {
+    if false {
         search();
+    }
+
+    if true {
+        watch_search();
     }
 
     Ok(())
@@ -121,6 +125,63 @@ fn index_data(
     index_writer.commit()?;
 
     Ok(())
+}
+
+fn watch_search() {
+    let search_watcher = SearchWatcher::new(INDEX_CACHE_DIRECTORY);
+    search_watcher.initial_index(JSON_DATA_FILE);
+
+    println!("Enter a search term...\n");
+    for line in io::stdin().lines() {
+        match line {
+            Ok(line) => {
+                println!("searching for {:?} ", line);
+
+                // Query Variables (will be passed to the method from a FE interface of some sort)
+                let mut text: String = "".to_string();
+                if line.len() > 0 {
+                    text = format!("\"{}\"", line);
+                }
+                let faceted = Faceted {
+                    tags: vec![
+                        "/genre".to_string(),
+                        "/year".to_string(),
+                        "/album".to_string(),
+                        "/artist".to_string(),
+                    ],
+                };
+
+                // Order by
+                let order_by_object: OrderBy = OrderBy {
+                    field: "created_date".to_string(),
+                    order_type: OrderType::Desc,
+                };
+                let order_by: Option<OrderBy> = Some(order_by_object);
+
+                let faced_only_flag = true;
+
+                let request = DocumentSearchRequest {
+                    text,
+                    fields: vec!["body".to_string()],
+                    filters: Filters {
+                        year_start: None,
+                        year_end: None,
+                        created_date_start: None,
+                        created_date_end: None,
+                    },
+                    faceted: Some(faceted.clone()),
+                    order: order_by,
+                    page_number: 0,
+                    result_per_page: 10,
+                    reload: false,
+                };
+
+                search_watcher.search(request);
+                println!("Search again? ...\n");
+            }
+            Err(err) => println!("IO error: {}", err),
+        }
+    }
 }
 
 fn search() -> tantivy::Result<()> {
@@ -206,70 +267,6 @@ fn search() -> tantivy::Result<()> {
 
     let response_json = serde_json::to_string(&response)?;
     println!("{}", response_json);
-
-    // By Year
-    // let year_range_query = Box::new(RangeQuery::new_u64(field_schema.year, year_start..year_end));
-    // queries.push((Occur::Must, year_range_query));
-
-    // By Created Date
-    // let created_date_range_query = Box::new(RangeQuery::new_u64(
-    //     field_schema.created_date,
-    //     created_date_start..created_date_end,
-    // ));
-    // queries.push((Occur::Must, created_date_range_query));
-
-    // Facets
-    // let facet_strings_for_search_valid: Vec<String> = facet_strings_for_search
-    //     .iter()
-    //     .filter(|s| is_valid_facet(*s))
-    //     .cloned()
-    //     .collect();
-    // queries = build_facets(queries, &field_schema, facet_strings_for_search_valid);
-
-    // let query = BooleanQuery::new(queries);
-    // let mut multicollector = MultiCollector::new();
-
-    // let facets = facet_strings
-    //     .iter()
-    //     .filter(|s| is_valid_facet(*s))
-    //     .cloned()
-    //     .collect();
-
-    // println!("facets {:?} ", facets);
-
-    // let mut facet_collector = FacetCollector::for_field(field_schema.facets);
-    // for facet in &facets {
-    //     match Facet::from_text(facet) {
-    //         Ok(facet) => facet_collector.add_facet(facet),
-    //         Err(_) => println!("Invalid facet: {}", facet),
-    //     }
-    // }
-
-    // let facet_handler = multicollector.add_collector(facet_collector);
-
-    // let topdocs_collector = TopDocs::with_limit(limit).and_offset(offset);
-    // // .order_by_u64_field(order_field);
-    // let topdocs_handler = multicollector.add_collector(topdocs_collector);
-    // let count_handler = multicollector.add_collector(Count);
-
-    // let mut multi_fruit = searcher.search(&query, &multicollector).unwrap();
-
-    // let facets_count = facet_handler.extract(&mut multi_fruit);
-    // let top_docs = topdocs_handler.extract(&mut multi_fruit);
-    // let count = count_handler.extract(&mut multi_fruit);
-    // println!("\nTotal items found for query {:?}", count);
-
-    // let facets_created = create_facets(facets, facets_count);
-    // for (facet_key, facet_top) in facets_created {
-    //     println!("\n{}", facet_key);
-    //     for facet_item in facet_top.facet_results {
-    //         println!(
-    //             "  {}: {:?} ",
-    //             facet_item.tag.replace(&facet_key, ""),
-    //             facet_item.total
-    //         );
-    //     }
-    // }
 
     let end = SystemTime::now();
     println!(
