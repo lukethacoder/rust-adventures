@@ -30,7 +30,7 @@ use crate::schema::{
     OrderType, SearchWatcher, TrackJson,
 };
 use crate::search_query::do_search;
-use crate::utils::{file_ext, norm};
+use crate::utils::{file_ext, norm, ALLOWED_FILE_TYPES};
 
 const JSON_DATA_FILE: &str = "./data/audio.json";
 
@@ -129,7 +129,9 @@ fn index_data(
 
 fn watch_search() {
     let search_watcher = SearchWatcher::new(INDEX_CACHE_DIRECTORY);
-    search_watcher.initial_index(JSON_DATA_FILE);
+    // search_watcher.initial_index_from_json(JSON_DATA_FILE);
+    search_watcher.index_since_last_opened();
+    return;
 
     println!("Enter a search term...\n");
     for line in io::stdin().lines() {
@@ -310,9 +312,7 @@ fn walk(path: &String) {
         let name = en.file_name().to_str().unwrap();
         let ext = file_ext(name);
 
-        let allowed_types = ["mp3", "m4a", "mp4", "flac", "wav"];
-
-        if !is_dir & allowed_types.contains(&ext) {
+        if !is_dir & ALLOWED_FILE_TYPES.contains(&ext) {
             if let Some(t) = get_track_from_path(&path_string) {
                 all_tracks.push(t);
             } else {

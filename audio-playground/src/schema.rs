@@ -11,10 +11,15 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::reader::{get_duration_for_path, get_track_from_path};
 use crate::search_query::{convert_bm25_order, convert_int_order, create_query, do_search};
-use crate::utils::{self, adapt_text, genre_string_to_vec, get_order_field, is_valid_facet};
+use crate::utils::{
+    self, adapt_text, file_ext, genre_string_to_vec, get_order_field, is_valid_facet, norm,
+    ALLOWED_FILE_TYPES,
+};
 use audiotags::AudioTag;
 use chrono::{DateTime, NaiveDateTime, Utc};
 use id3::TagLike;
+use jwalk::DirEntry;
+use jwalk::WalkDir;
 use serde::{Deserialize, Serialize};
 use slug::slugify;
 use tantivy::collector::Count;
@@ -43,6 +48,9 @@ pub struct SearchWatcher {
 }
 
 const JSON_DATA_FILE: &str = "./data/audio.json";
+
+const BASE_AUDIO_DIRECTORY: &str =
+    "C:\\Users\\lukes\\Github\\rust-adventures\\audio-playground\\audio";
 
 impl SearchWatcher {
     pub fn new(index_cache_directory: &str) -> Self {
@@ -288,7 +296,7 @@ impl SearchWatcher {
 
         self.writer.lock().unwrap().add_document(document).unwrap();
     }
-    pub fn initial_index(&self, json_file_path: &str) {
+    pub fn initial_index_from_json(&self, json_file_path: &str) {
         // Read JSON from file
         let json_file_path_as_path = Path::new(json_file_path);
         let json_file_str = read_to_string(json_file_path_as_path).expect("file not found");
@@ -301,6 +309,84 @@ impl SearchWatcher {
         println!("Total {} items indexed", data.len());
 
         self.writer.lock().unwrap().commit().unwrap();
+    }
+    pub fn index_since_last_opened(&self) {
+        let path = &norm(BASE_AUDIO_DIRECTORY).to_string();
+        let start = SystemTime::now();
+
+        // TODO: pull from locally stored config (LAST_UPDATED)
+        let last_opened: u128 = 1665410457180;
+        let now: u128 = SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .unwrap()
+            .as_millis();
+
+        println!("compare now {} to last opened {} ", &now, &last_opened);
+
+        let mut paths: Vec<String> = vec![];
+        let mut cnt = 0;
+
+        let mut generic = WalkDir::new(&path);
+        generic = generic.process_read_dir(move |_depth, _path, _read_dir_state, children| {
+            children.iter_mut().for_each(|dir_entry_result| {
+                if let Ok(dir_entry) = dir_entry_result {
+                    let modified = dir_entry
+                        .metadata()
+                        .unwrap()
+                        .modified()
+                        .unwrap()
+                        .duration_since(SystemTime::UNIX_EPOCH)
+                        .unwrap()
+                        .as_millis();
+
+                    // check if this file should be indexed (or at least checked) given the last indexed date
+                    if last_opened < modified {
+                        println!("✅ new file - please index");
+                        norm(dir_entry.path().to_str().unwrap_or(""));
+                    } else {
+                        println!("⏭️ should have already indexed this file");
+                    }
+                }
+            });
+        });
+        println!("paths {:?} ", &paths);
+
+        for entry in generic {
+            cnt += 1;
+            if entry.is_err() {
+                continue;
+            }
+
+            let en: DirEntry<((), ())> = entry.unwrap();
+            let buf = en.path();
+            let file_type = en.file_type();
+            let is_dir = file_type.is_dir();
+
+            let path_string = buf.to_str().unwrap().to_string();
+            let name = en.file_name().to_str().unwrap();
+            let ext = file_ext(name);
+
+            if !is_dir & ALLOWED_FILE_TYPES.contains(&ext) {
+                if let Some(track) = get_track_from_path(&path_string) {
+                    self.add(*track)
+                } else {
+                    tracks_failed.push(path_string)
+                }
+            }
+        }
+
+        println!("Failed to index {} tracks", &tracks_failed.len());
+
+        let end = SystemTime::now();
+        println!(
+            "cost {}ms, total {} files",
+            end.duration_since(start).unwrap().as_millis(),
+            cnt
+        );
+
+        self.writer.lock().unwrap().commit().unwrap();
+
+        // TODO: on success, set the locally stored config for LAST_UPDATED
     }
 }
 

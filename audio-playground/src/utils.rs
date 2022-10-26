@@ -4,6 +4,8 @@ use crate::schema::{FacetResult, FacetResults, FieldSchema, OrderBy};
 use regex::Regex;
 use tantivy::{collector::FacetCounts, query::QueryParser, schema::Facet};
 
+pub const ALLOWED_FILE_TYPES: [&str; 5] = ["mp3", "m4a", "mp4", "flac", "wav"];
+
 pub fn path2name(x: String) -> String {
     norm(&x)
         .as_str()
