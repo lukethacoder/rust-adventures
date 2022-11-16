@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fs;
 use std::fs::read_to_string;
 use std::io;
@@ -14,8 +15,16 @@ use audiotags::Tag;
 use chrono::NaiveDateTime;
 use id3;
 use mpeg_audio_header::{Header, ParseMode};
-use tantivy::chrono::Utc;
-use tantivy::{schema::*, DateTime, Index, IndexWriter, TantivyError};
+use serde_json::json;
+use tantivy::aggregation::agg_req::{
+    Aggregation, Aggregations, BucketAggregation, BucketAggregationType,
+};
+use tantivy::aggregation::agg_result::{AggregationResult, AggregationResults, BucketResult};
+use tantivy::aggregation::bucket::{CustomOrder, OrderTarget, TermsAggregation};
+use tantivy::aggregation::AggregationCollector;
+use tantivy::collector::{Collector, Count, FilterCollector, MultiFruit, TopDocs};
+use tantivy::query::{AllQuery, Query, QueryParser, TermQuery};
+use tantivy::{schema::*, DateTime, Index, IndexWriter, Order, TantivyError};
 
 use jwalk::{DirEntry, WalkDir};
 
@@ -49,11 +58,19 @@ fn main() -> tantivy::Result<()> {
     }
 
     if false {
-        search();
+        search()?;
+    }
+
+    if false {
+        watch_search();
+    }
+
+    if false {
+        aggregate_search()?;
     }
 
     if true {
-        watch_search();
+        aggregate_search_albums_for_artist("Trivium".to_string())?;
     }
 
     Ok(())
@@ -83,22 +100,16 @@ fn index_data(
         document.add_u64(field_schema.year, item.year as u64);
         document.add_i64(field_schema.size, item.size);
 
-        let date_time_value = DateTime::from_utc(
-            NaiveDateTime::from_timestamp(item.created_date / 1000, 0),
-            Utc,
-        );
+        let date_time_value: tantivy::DateTime =
+            tantivy::DateTime::from_unix_timestamp(item.created_date / 1000);
         document.add_date(field_schema.created_date, date_time_value);
 
-        let date_time_modified_value = DateTime::from_utc(
-            NaiveDateTime::from_timestamp(item.modified_date / 1000, 0),
-            Utc,
-        );
+        let date_time_modified_value: tantivy::DateTime =
+            tantivy::DateTime::from_unix_timestamp(item.modified_date / 1000);
         document.add_date(field_schema.modified_date, date_time_modified_value);
 
-        let date_time_indexed_value = DateTime::from_utc(
-            NaiveDateTime::from_timestamp(item.indexed_date / 1000, 0),
-            Utc,
-        );
+        let date_time_indexed_value: tantivy::DateTime =
+            tantivy::DateTime::from_unix_timestamp(item.indexed_date / 1000);
         document.add_date(field_schema.indexed_date, date_time_indexed_value);
 
         let facet_album_string = format!("/album/{}", &item.album);
@@ -123,6 +134,125 @@ fn index_data(
     }
 
     index_writer.commit()?;
+
+    Ok(())
+}
+
+fn aggregate_search_albums_for_artist(artist: String) -> tantivy::Result<()> {
+    let field_schema: FieldSchema = FieldSchema::new();
+
+    let index_path: &Path = Path::new(INDEX_CACHE_DIRECTORY);
+    let index: Index;
+    if index_path.exists() {
+        index = Index::open_in_dir(&index_path).ok().unwrap();
+    } else {
+        fs::create_dir(index_path).ok();
+        index = Index::create_in_dir(&index_path, field_schema.schema.clone())
+            .ok()
+            .unwrap();
+    }
+
+    // let index = Index::create_in_ram(field_schema.schema.clone());
+    let index_writer: IndexWriter = index.writer(30_000_000)?;
+
+    index_data(&field_schema, index_writer, JSON_DATA_FILE)?;
+    let reader = index
+        .reader_builder()
+        .reload_policy(tantivy::ReloadPolicy::OnCommit)
+        .try_into()
+        .unwrap();
+
+    // start aggregate search
+    // query for the specific artist here `artist`
+    let query_parser = QueryParser::for_index(&index, vec![field_schema.artist]);
+    let query = query_parser
+        .parse_query(&format!("artist:{}", &artist))
+        .unwrap();
+
+    // ideally we'd be able to filter by top level facet types here
+    let aggregate_request: Aggregations = vec![(
+        "facet_aggregate_search".to_string(),
+        Aggregation::Bucket(BucketAggregation {
+            bucket_agg: BucketAggregationType::Terms(TermsAggregation {
+                field: "facets".to_string(),
+                size: Some(1000),
+                order: Some(CustomOrder {
+                    target: OrderTarget::Key,
+                    order: tantivy::aggregation::bucket::Order::Desc,
+                }),
+                ..Default::default()
+            }),
+            sub_aggregation: Default::default(),
+        }),
+    )]
+    .into_iter()
+    .collect();
+
+    let collector = AggregationCollector::from_aggs(aggregate_request);
+    let searcher = reader.searcher();
+    let agg_res: AggregationResults = searcher.search(&query, &collector).unwrap();
+
+    let json_response_string = serde_json::to_string(&agg_res)?;
+
+    println!("Aggregate for artist {}", &artist);
+    println!("{}", json_response_string);
+
+    Ok(())
+}
+
+fn aggregate_search() -> tantivy::Result<()> {
+    let field_schema: FieldSchema = FieldSchema::new();
+
+    let index_path: &Path = Path::new(INDEX_CACHE_DIRECTORY);
+    let index: Index;
+    if index_path.exists() {
+        index = Index::open_in_dir(&index_path).ok().unwrap();
+    } else {
+        fs::create_dir(index_path).ok();
+        index = Index::create_in_dir(&index_path, field_schema.schema.clone())
+            .ok()
+            .unwrap();
+    }
+
+    // let index = Index::create_in_ram(field_schema.schema.clone());
+    let index_writer: IndexWriter = index.writer(30_000_000)?;
+
+    index_data(&field_schema, index_writer, JSON_DATA_FILE)?;
+    let reader = index
+        .reader_builder()
+        .reload_policy(tantivy::ReloadPolicy::OnCommit)
+        .try_into()
+        .unwrap();
+
+    // start aggregate search
+
+    // ideally we'd be able to filter by top level facet types here
+    let aggregate_request: Aggregations = vec![(
+        "facet_aggregate_search".to_string(),
+        Aggregation::Bucket(BucketAggregation {
+            bucket_agg: BucketAggregationType::Terms(TermsAggregation {
+                field: "facets".to_string(),
+                size: Some(100000),
+                order: Some(CustomOrder {
+                    target: OrderTarget::Key,
+                    order: tantivy::aggregation::bucket::Order::Desc,
+                }),
+                ..Default::default()
+            }),
+            sub_aggregation: Default::default(),
+        }),
+    )]
+    .into_iter()
+    .collect();
+
+    let collector = AggregationCollector::from_aggs(aggregate_request);
+    let searcher = reader.searcher();
+    let agg_res: AggregationResults = searcher.search(&AllQuery, &collector).unwrap();
+
+    let json_response_string = serde_json::to_string(&agg_res)?;
+
+    println!("json_response_string");
+    println!("{}", json_response_string);
 
     Ok(())
 }

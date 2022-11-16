@@ -29,13 +29,12 @@ use tantivy::collector::TopDocs;
 use tantivy::query::AllQuery;
 use tantivy::query::Query;
 use tantivy::query::QueryParser;
-use tantivy::schema::FAST;
+use tantivy::time::PrimitiveDateTime;
 use tantivy::{
     collector::FacetCounts,
-    fastfield::FastValue,
     schema::{
         Cardinality, Facet, FacetOptions, Field, IndexRecordOption, NumericOptions, Schema,
-        TextFieldIndexing, TextOptions, Value, STORED, STRING,
+        TextFieldIndexing, TextOptions, Value, FAST, STORED, STRING,
     },
     DocAddress, Document, Index, IndexReader, IndexWriter, TantivyError,
 };
@@ -258,22 +257,16 @@ impl SearchWatcher {
         document.add_u64(self.field_schema.year, item.year as u64);
         document.add_i64(self.field_schema.size, item.size);
 
-        let date_time_value = DateTime::from_utc(
-            NaiveDateTime::from_timestamp(item.created_date / 1000, 0),
-            Utc,
-        );
+        let date_time_value: tantivy::DateTime =
+            tantivy::DateTime::from_unix_timestamp(item.created_date / 1000);
         document.add_date(self.field_schema.created_date, date_time_value);
 
-        let date_time_modified_value = DateTime::from_utc(
-            NaiveDateTime::from_timestamp(item.modified_date / 1000, 0),
-            Utc,
-        );
+        let date_time_modified_value: tantivy::DateTime =
+            tantivy::DateTime::from_unix_timestamp(item.modified_date / 1000);
         document.add_date(self.field_schema.modified_date, date_time_modified_value);
 
-        let date_time_indexed_value = DateTime::from_utc(
-            NaiveDateTime::from_timestamp(item.indexed_date / 1000, 0),
-            Utc,
-        );
+        let date_time_indexed_value: tantivy::DateTime =
+            tantivy::DateTime::from_unix_timestamp(item.indexed_date / 1000);
         document.add_date(self.field_schema.indexed_date, date_time_indexed_value);
 
         let facet_album_string = format!("/album/{}", &item.album);
@@ -368,14 +361,15 @@ impl SearchWatcher {
 
             if !is_dir & ALLOWED_FILE_TYPES.contains(&ext) {
                 if let Some(track) = get_track_from_path(&path_string) {
-                    self.add(*track)
-                } else {
-                    tracks_failed.push(path_string)
+                    self.add(&track)
                 }
+                // else {
+                //     tracks_failed.push(path_string)
+                // }
             }
         }
 
-        println!("Failed to index {} tracks", &tracks_failed.len());
+        // println!("Failed to index {} tracks", &tracks_failed.len());
 
         let end = SystemTime::now();
         println!(
@@ -419,7 +413,8 @@ impl FieldSchema {
             TextFieldIndexing::default().set_index_option(IndexRecordOption::WithFreqsAndPositions);
         let text_options = TextOptions::default()
             .set_stored()
-            .set_indexing_options(text_field_indexing);
+            .set_indexing_options(text_field_indexing)
+            .set_fast();
 
         let num_options: NumericOptions = NumericOptions::default()
             .set_stored()
@@ -551,14 +546,15 @@ impl Track {
         let created_date = track_json.created_date;
         let modified_date = track_json.modified_date;
 
-        let now_date_time: &DateTime<Utc> = &chrono::DateTime::<Utc>::MIN_UTC;
+        let now_date_time: tantivy::DateTime =
+            tantivy::DateTime::from_primitive(PrimitiveDateTime::MIN);
 
         // Dates
         let indexed_date: i64 = doc
             .get_first(field_schema.indexed_date)
             .and_then(Value::as_date)
             .unwrap_or(now_date_time)
-            .timestamp();
+            .into_unix_timestamp();
 
         Track {
             id,
