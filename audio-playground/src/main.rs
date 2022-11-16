@@ -23,6 +23,7 @@ use tantivy::aggregation::agg_result::{AggregationResult, AggregationResults, Bu
 use tantivy::aggregation::bucket::{CustomOrder, OrderTarget, TermsAggregation};
 use tantivy::aggregation::AggregationCollector;
 use tantivy::collector::{Collector, Count, FilterCollector, MultiFruit, TopDocs};
+use tantivy::fastfield::FastFieldsWriter;
 use tantivy::query::{AllQuery, Query, QueryParser, TermQuery};
 use tantivy::{schema::*, DateTime, Index, IndexWriter, Order, TantivyError};
 
@@ -65,12 +66,20 @@ fn main() -> tantivy::Result<()> {
         watch_search();
     }
 
+    if true {
+        search_by_genre("Random Genre Here".to_string())?;
+    }
+
     if false {
         aggregate_search()?;
     }
 
-    if true {
+    if false {
         aggregate_search_albums_for_artist("Trivium".to_string())?;
+    }
+
+    if false {
+        aggregate_search_all()?
     }
 
     Ok(())
@@ -96,7 +105,7 @@ fn index_data(
         document.add_text(field_schema.track, &item.track);
         document.add_text(field_schema.album, &item.album);
         document.add_text(field_schema.artist, &item.artist);
-        document.add_text(field_schema.genre, &item.genre);
+        // document.add_text(field_schema.genre, &item.genre);
         document.add_u64(field_schema.year, item.year as u64);
         document.add_i64(field_schema.size, item.size);
 
@@ -122,6 +131,7 @@ fn index_data(
         document.add_facet(field_schema.facets, Facet::from(&facet_year_string));
 
         for genre in &item.genres {
+            document.add_text(field_schema.genre, &genre);
             let facet_string = format!("/genre/{}", &genre);
             document.add_facet(field_schema.facets, Facet::from(&facet_string));
         }
@@ -134,6 +144,76 @@ fn index_data(
     }
 
     index_writer.commit()?;
+
+    Ok(())
+}
+
+fn aggregate_search_all() -> tantivy::Result<()> {
+    let field_schema: FieldSchema = FieldSchema::new();
+
+    let index_path: &Path = Path::new(INDEX_CACHE_DIRECTORY);
+    let index: Index;
+    if index_path.exists() {
+        index = Index::open_in_dir(&index_path).ok().unwrap();
+    } else {
+        fs::create_dir(index_path).ok();
+        index = Index::create_in_dir(&index_path, field_schema.schema.clone())
+            .ok()
+            .unwrap();
+    }
+
+    // let index = Index::create_in_ram(field_schema.schema.clone());
+    let index_writer: IndexWriter = index.writer(30_000_000)?;
+
+    index_data(&field_schema, index_writer, JSON_DATA_FILE)?;
+    let reader = index
+        .reader_builder()
+        .reload_policy(tantivy::ReloadPolicy::OnCommit)
+        .try_into()
+        .unwrap();
+
+    // start aggregate search
+
+    let sub_aggregation: Aggregations = vec![(
+        "album_bucket".to_string(),
+        Aggregation::Bucket(BucketAggregation {
+            bucket_agg: BucketAggregationType::Terms(TermsAggregation {
+                field: "album".to_string(),
+                size: Some(50),
+                order: Some(CustomOrder {
+                    target: OrderTarget::Key,
+                    order: tantivy::aggregation::bucket::Order::Desc,
+                }),
+                ..Default::default()
+            }),
+            sub_aggregation: Default::default(),
+        }),
+    )]
+    .into_iter()
+    .collect();
+
+    let aggregate_request: Aggregations = vec![(
+        "artist_bucket".to_string(),
+        Aggregation::Bucket(BucketAggregation {
+            bucket_agg: BucketAggregationType::Terms(TermsAggregation {
+                field: "artist".to_string(),
+                size: Some(1000),
+                ..Default::default()
+            }),
+            sub_aggregation: sub_aggregation,
+        }),
+    )]
+    .into_iter()
+    .collect();
+
+    let collector = AggregationCollector::from_aggs(aggregate_request);
+    let searcher = reader.searcher();
+    let agg_res: AggregationResults = searcher.search(&AllQuery, &collector).unwrap();
+
+    let json_response_string = serde_json::to_string(&agg_res)?;
+
+    println!("all artists");
+    println!("{}", json_response_string);
 
     Ok(())
 }
@@ -169,13 +249,12 @@ fn aggregate_search_albums_for_artist(artist: String) -> tantivy::Result<()> {
         .parse_query(&format!("artist:{}", &artist))
         .unwrap();
 
-    // ideally we'd be able to filter by top level facet types here
-    let aggregate_request: Aggregations = vec![(
-        "facet_aggregate_search".to_string(),
+    let sub_aggregation: Aggregations = vec![(
+        "track_bucket".to_string(),
         Aggregation::Bucket(BucketAggregation {
             bucket_agg: BucketAggregationType::Terms(TermsAggregation {
-                field: "facets".to_string(),
-                size: Some(1000),
+                field: "track".to_string(),
+                size: Some(50),
                 order: Some(CustomOrder {
                     target: OrderTarget::Key,
                     order: tantivy::aggregation::bucket::Order::Desc,
@@ -183,6 +262,24 @@ fn aggregate_search_albums_for_artist(artist: String) -> tantivy::Result<()> {
                 ..Default::default()
             }),
             sub_aggregation: Default::default(),
+        }),
+    )]
+    .into_iter()
+    .collect();
+
+    let aggregate_request: Aggregations = vec![(
+        "album_bucket".to_string(),
+        Aggregation::Bucket(BucketAggregation {
+            bucket_agg: BucketAggregationType::Terms(TermsAggregation {
+                field: "album".to_string(),
+                size: Some(1000),
+                order: Some(CustomOrder {
+                    target: OrderTarget::Key,
+                    order: tantivy::aggregation::bucket::Order::Desc,
+                }),
+                ..Default::default()
+            }),
+            sub_aggregation: sub_aggregation,
         }),
     )]
     .into_iter()
@@ -227,27 +324,74 @@ fn aggregate_search() -> tantivy::Result<()> {
     // start aggregate search
 
     // ideally we'd be able to filter by top level facet types here
-    let aggregate_request: Aggregations = vec![(
-        "facet_aggregate_search".to_string(),
-        Aggregation::Bucket(BucketAggregation {
-            bucket_agg: BucketAggregationType::Terms(TermsAggregation {
-                field: "facets".to_string(),
-                size: Some(100000),
-                order: Some(CustomOrder {
-                    target: OrderTarget::Key,
-                    order: tantivy::aggregation::bucket::Order::Desc,
+    let aggregate_request: Aggregations = vec![
+        (
+            "album_bucket".to_string(),
+            Aggregation::Bucket(BucketAggregation {
+                bucket_agg: BucketAggregationType::Terms(TermsAggregation {
+                    field: "album".to_string(),
+                    size: Some(50),
+                    order: Some(CustomOrder {
+                        target: OrderTarget::Key,
+                        order: tantivy::aggregation::bucket::Order::Desc,
+                    }),
+                    ..Default::default()
                 }),
-                ..Default::default()
+                sub_aggregation: Default::default(),
             }),
-            sub_aggregation: Default::default(),
-        }),
-    )]
+        ),
+        (
+            "artist_bucket".to_string(),
+            Aggregation::Bucket(BucketAggregation {
+                bucket_agg: BucketAggregationType::Terms(TermsAggregation {
+                    field: "artist".to_string(),
+                    size: Some(50),
+                    order: Some(CustomOrder {
+                        target: OrderTarget::Key,
+                        order: tantivy::aggregation::bucket::Order::Desc,
+                    }),
+                    ..Default::default()
+                }),
+                sub_aggregation: Default::default(),
+            }),
+        ),
+        (
+            "genre_bucket".to_string(),
+            Aggregation::Bucket(BucketAggregation {
+                bucket_agg: BucketAggregationType::Terms(TermsAggregation {
+                    field: "genre".to_string(),
+                    size: Some(50),
+                    order: Some(CustomOrder {
+                        target: OrderTarget::Key,
+                        order: tantivy::aggregation::bucket::Order::Desc,
+                    }),
+                    ..Default::default()
+                }),
+                sub_aggregation: Default::default(),
+            }),
+        ),
+    ]
     .into_iter()
     .collect();
 
     let collector = AggregationCollector::from_aggs(aggregate_request);
     let searcher = reader.searcher();
-    let agg_res: AggregationResults = searcher.search(&AllQuery, &collector).unwrap();
+
+    // query for the specific artist here `artist`
+    let query_parser = QueryParser::for_index(
+        &index,
+        vec![
+            field_schema.title,
+            field_schema.track,
+            field_schema.album,
+            field_schema.artist,
+        ],
+    );
+    let query = query_parser.parse_query("*").unwrap();
+    let top_docs = searcher.search(&query, &TopDocs::with_limit(200))?;
+    // println!("top_docs {:?}", &top_docs);
+
+    let agg_res: AggregationResults = searcher.search(&query, &collector).unwrap();
 
     let json_response_string = serde_json::to_string(&agg_res)?;
 
@@ -314,6 +458,106 @@ fn watch_search() {
             Err(err) => println!("IO error: {}", err),
         }
     }
+}
+
+fn search_by_genre(genre: String) -> tantivy::Result<()> {
+    let field_schema: FieldSchema = FieldSchema::new();
+
+    let index_path: &Path = Path::new(INDEX_CACHE_DIRECTORY);
+    let index: Index;
+    if index_path.exists() {
+        index = Index::open_in_dir(&index_path).ok().unwrap();
+    } else {
+        fs::create_dir(index_path).ok();
+        index = Index::create_in_dir(&index_path, field_schema.schema.clone())
+            .ok()
+            .unwrap();
+    }
+
+    // let index = Index::create_in_ram(field_schema.schema.clone());
+    let index_writer: IndexWriter = index.writer(30_000_000)?;
+
+    index_data(&field_schema, index_writer, JSON_DATA_FILE)?;
+    let reader = index
+        .reader_builder()
+        .reload_policy(tantivy::ReloadPolicy::OnCommit)
+        .try_into()
+        .unwrap();
+
+    // start aggregate search
+
+    let sub_aggregation: Aggregations = vec![(
+        "album_bucket".to_string(),
+        Aggregation::Bucket(BucketAggregation {
+            bucket_agg: BucketAggregationType::Terms(TermsAggregation {
+                field: "album".to_string(),
+                size: Some(50),
+                order: Some(CustomOrder {
+                    target: OrderTarget::Key,
+                    order: tantivy::aggregation::bucket::Order::Desc,
+                }),
+                ..Default::default()
+            }),
+            sub_aggregation: Default::default(),
+        }),
+    )]
+    .into_iter()
+    .collect();
+
+    let aggregate_request: Aggregations = vec![(
+        "artist_bucket".to_string(),
+        Aggregation::Bucket(BucketAggregation {
+            bucket_agg: BucketAggregationType::Terms(TermsAggregation {
+                field: "artist".to_string(),
+                size: Some(1000),
+                ..Default::default()
+            }),
+            sub_aggregation: sub_aggregation,
+        }),
+    )]
+    .into_iter()
+    .collect();
+
+    // query for the specific genre here
+    let query_parser = QueryParser::for_index(
+        &index,
+        vec![
+            field_schema.title,
+            field_schema.track,
+            field_schema.album,
+            field_schema.artist,
+            field_schema.genre,
+        ],
+    );
+    // let query = query_parser.parse_query(&genre).unwrap();
+    let query = TermQuery::new(
+        Term::from_field_text(field_schema.genre, &genre),
+        IndexRecordOption::Basic,
+    );
+
+    let searcher = reader.searcher();
+    let top_docs = searcher.search(&query, &TopDocs::with_limit(200))?;
+    // println!("top_docs {:?}", &top_docs);
+
+    for (id, (_, doc_address)) in top_docs.into_iter().enumerate() {
+        match searcher.doc(doc_address) {
+            Ok(doc) => {
+                println!("{}", serde_json::to_string(&doc)?);
+            }
+            Err(e) => log::error!("Error retrieving document from index: {}", e),
+        }
+    }
+
+    let collector = AggregationCollector::from_aggs(aggregate_request);
+    let searcher = reader.searcher();
+    let agg_res: AggregationResults = searcher.search(&query, &collector).unwrap();
+
+    let json_response_string = serde_json::to_string(&agg_res)?;
+
+    println!("all artists");
+    println!("{}", json_response_string);
+
+    Ok(())
 }
 
 fn search() -> tantivy::Result<()> {

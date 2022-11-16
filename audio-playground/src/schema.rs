@@ -29,6 +29,7 @@ use tantivy::collector::TopDocs;
 use tantivy::query::AllQuery;
 use tantivy::query::Query;
 use tantivy::query::QueryParser;
+use tantivy::schema::TEXT;
 use tantivy::time::PrimitiveDateTime;
 use tantivy::{
     collector::FacetCounts,
@@ -429,13 +430,14 @@ impl FieldSchema {
         let id = sb.add_bytes_field("id", STORED | FAST);
         let abs_path = sb.add_text_field("abs_path", STRING | STORED);
         let size = sb.add_i64_field("size", num_options.clone());
-        let title = sb.add_text_field("title", text_options.clone());
-        let track = sb.add_text_field("track", text_options.clone());
-        let artist = sb.add_text_field("artist", text_options.clone());
-        let album = sb.add_text_field("album", text_options.clone());
-        let genre = sb.add_text_field("genre", text_options.clone());
+        let title = sb.add_text_field("title", STRING | FAST);
+        let track = sb.add_text_field("track", STRING | FAST);
+        let artist = sb.add_text_field("artist", STRING | FAST);
+        let album = sb.add_text_field("album", STRING | FAST);
         let duration = sb.add_f64_field("duration", num_options.clone());
         let year = sb.add_u64_field("year", num_options.clone());
+
+        let genre = sb.add_text_field("genre", STRING | FAST);
 
         // Dates
         let created_date = sb.add_date_field("created_date", date_options.clone());
