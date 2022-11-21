@@ -435,7 +435,10 @@ impl FieldSchema {
         let artist = sb.add_text_field("artist", STRING | FAST);
         let album = sb.add_text_field("album", STRING | FAST);
         let duration = sb.add_f64_field("duration", num_options.clone());
-        let year = sb.add_u64_field("year", num_options.clone());
+        let year = sb.add_u64_field(
+            "year",
+            NumericOptions::default().set_fast(Cardinality::SingleValue),
+        );
 
         let genre = sb.add_text_field("genre", STRING | FAST);
 

@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::fs;
 use std::fs::read_to_string;
 use std::io;
@@ -11,21 +10,17 @@ use std::os::unix::fs::MetadataExt;
 #[cfg(windows)]
 use std::os::windows::fs::MetadataExt;
 
-use audiotags::Tag;
-use chrono::NaiveDateTime;
-use id3;
-use mpeg_audio_header::{Header, ParseMode};
-use serde_json::json;
 use tantivy::aggregation::agg_req::{
     Aggregation, Aggregations, BucketAggregation, BucketAggregationType,
 };
-use tantivy::aggregation::agg_result::{AggregationResult, AggregationResults, BucketResult};
-use tantivy::aggregation::bucket::{CustomOrder, OrderTarget, TermsAggregation};
+use tantivy::aggregation::agg_result::AggregationResults;
+use tantivy::aggregation::bucket::{
+    CustomOrder, HistogramAggregation, OrderTarget, TermsAggregation,
+};
 use tantivy::aggregation::AggregationCollector;
-use tantivy::collector::{Collector, Count, FilterCollector, MultiFruit, TopDocs};
-use tantivy::fastfield::FastFieldsWriter;
-use tantivy::query::{AllQuery, Query, QueryParser, TermQuery};
-use tantivy::{schema::*, DateTime, Index, IndexWriter, Order, TantivyError};
+use tantivy::collector::{Count, TopDocs};
+use tantivy::query::{AllQuery, QueryParser, TermQuery};
+use tantivy::{schema::*, Index, IndexReader, IndexWriter, LeasedItem, Searcher, TantivyError};
 
 use jwalk::{DirEntry, WalkDir};
 
@@ -66,7 +61,7 @@ fn main() -> tantivy::Result<()> {
         watch_search();
     }
 
-    if true {
+    if false {
         search_by_genre("Random Genre Here".to_string())?;
     }
 
@@ -74,7 +69,7 @@ fn main() -> tantivy::Result<()> {
         aggregate_search()?;
     }
 
-    if false {
+    if true {
         aggregate_search_albums_for_artist("Trivium".to_string())?;
     }
 
@@ -85,9 +80,23 @@ fn main() -> tantivy::Result<()> {
     Ok(())
 }
 
+pub fn is_existing_by_path(
+    track_path: &str,
+    searcher: &LeasedItem<Searcher>,
+    query_parser: &QueryParser,
+) -> bool {
+    let path_query = format!("\"{}\"", &track_path);
+    let query = query_parser.parse_query(path_query.as_str()).unwrap();
+    let count = searcher.search(&query, &Count).unwrap();
+
+    count > 0
+}
+
 fn index_data(
     field_schema: &FieldSchema,
     mut index_writer: IndexWriter,
+    searcher: &LeasedItem<Searcher>,
+    query_parser: QueryParser,
     json_file_path: &str,
 ) -> Result<(), TantivyError> {
     // Read JSON from file
@@ -98,49 +107,52 @@ fn index_data(
     println!("Total {} items", data.len());
 
     for item in data.iter() {
-        let mut document = Document::default();
-        document.add_text(field_schema.id, &item.id);
-        document.add_text(field_schema.abs_path, &item.abs_path);
-        document.add_text(field_schema.title, &item.name);
-        document.add_text(field_schema.track, &item.track);
-        document.add_text(field_schema.album, &item.album);
-        document.add_text(field_schema.artist, &item.artist);
-        // document.add_text(field_schema.genre, &item.genre);
-        document.add_u64(field_schema.year, item.year as u64);
-        document.add_i64(field_schema.size, item.size);
+        // duplicate check
+        if !is_existing_by_path(&item.abs_path, &searcher, &query_parser) {
+            let mut document = Document::default();
+            document.add_text(field_schema.id, &item.id);
+            document.add_text(field_schema.abs_path, &item.abs_path);
+            document.add_text(field_schema.title, &item.name);
+            document.add_text(field_schema.track, &item.track);
+            document.add_text(field_schema.album, &item.album);
+            document.add_text(field_schema.artist, &item.artist);
+            // document.add_text(field_schema.genre, &item.genre);
+            document.add_u64(field_schema.year, item.year as u64);
+            document.add_i64(field_schema.size, item.size);
 
-        let date_time_value: tantivy::DateTime =
-            tantivy::DateTime::from_unix_timestamp(item.created_date / 1000);
-        document.add_date(field_schema.created_date, date_time_value);
+            let date_time_value: tantivy::DateTime =
+                tantivy::DateTime::from_unix_timestamp(item.created_date / 1000);
+            document.add_date(field_schema.created_date, date_time_value);
 
-        let date_time_modified_value: tantivy::DateTime =
-            tantivy::DateTime::from_unix_timestamp(item.modified_date / 1000);
-        document.add_date(field_schema.modified_date, date_time_modified_value);
+            let date_time_modified_value: tantivy::DateTime =
+                tantivy::DateTime::from_unix_timestamp(item.modified_date / 1000);
+            document.add_date(field_schema.modified_date, date_time_modified_value);
 
-        let date_time_indexed_value: tantivy::DateTime =
-            tantivy::DateTime::from_unix_timestamp(item.indexed_date / 1000);
-        document.add_date(field_schema.indexed_date, date_time_indexed_value);
+            let date_time_indexed_value: tantivy::DateTime =
+                tantivy::DateTime::from_unix_timestamp(item.indexed_date / 1000);
+            document.add_date(field_schema.indexed_date, date_time_indexed_value);
 
-        let facet_album_string = format!("/album/{}", &item.album);
-        document.add_facet(field_schema.facets, Facet::from(&facet_album_string));
+            let facet_album_string = format!("/album/{}", &item.album);
+            document.add_facet(field_schema.facets, Facet::from(&facet_album_string));
 
-        let facet_artist_string = format!("/artist/{}", &item.artist);
-        document.add_facet(field_schema.facets, Facet::from(&facet_artist_string));
+            let facet_artist_string = format!("/artist/{}", &item.artist);
+            document.add_facet(field_schema.facets, Facet::from(&facet_artist_string));
 
-        let facet_year_string = format!("/year/{}", &item.year);
-        document.add_facet(field_schema.facets, Facet::from(&facet_year_string));
+            let facet_year_string = format!("/year/{}", &item.year);
+            document.add_facet(field_schema.facets, Facet::from(&facet_year_string));
 
-        for genre in &item.genres {
-            document.add_text(field_schema.genre, &genre);
-            let facet_string = format!("/genre/{}", &genre);
-            document.add_facet(field_schema.facets, Facet::from(&facet_string));
+            for genre in &item.genres {
+                document.add_text(field_schema.genre, &genre);
+                let facet_string = format!("/genre/{}", &genre);
+                document.add_facet(field_schema.facets, Facet::from(&facet_string));
+            }
+
+            if let Some(d) = get_duration_for_path(&item.abs_path) {
+                document.add_f64(field_schema.duration, d);
+            }
+
+            index_writer.add_document(document)?;
         }
-
-        if let Some(d) = get_duration_for_path(&item.abs_path) {
-            document.add_f64(field_schema.duration, d);
-        }
-
-        index_writer.add_document(document)?;
     }
 
     index_writer.commit()?;
@@ -148,7 +160,12 @@ fn index_data(
     Ok(())
 }
 
-fn aggregate_search_all() -> tantivy::Result<()> {
+fn setup() -> tantivy::Result<(
+    FieldSchema,
+    LeasedItem<tantivy::Searcher>,
+    Index,
+    IndexReader,
+)> {
     let field_schema: FieldSchema = FieldSchema::new();
 
     let index_path: &Path = Path::new(INDEX_CACHE_DIRECTORY);
@@ -165,13 +182,26 @@ fn aggregate_search_all() -> tantivy::Result<()> {
     // let index = Index::create_in_ram(field_schema.schema.clone());
     let index_writer: IndexWriter = index.writer(30_000_000)?;
 
-    index_data(&field_schema, index_writer, JSON_DATA_FILE)?;
     let reader = index
         .reader_builder()
         .reload_policy(tantivy::ReloadPolicy::OnCommit)
         .try_into()
         .unwrap();
 
+    let searcher = reader.searcher();
+    index_data(
+        &field_schema,
+        index_writer,
+        &searcher,
+        QueryParser::for_index(&index, vec![field_schema.abs_path]),
+        JSON_DATA_FILE,
+    )?;
+
+    Ok((field_schema, searcher, index, reader))
+}
+
+fn aggregate_search_all() -> tantivy::Result<()> {
+    let (_, searcher, _, _) = setup()?;
     // start aggregate search
 
     let sub_aggregation: Aggregations = vec![(
@@ -207,7 +237,6 @@ fn aggregate_search_all() -> tantivy::Result<()> {
     .collect();
 
     let collector = AggregationCollector::from_aggs(aggregate_request);
-    let searcher = reader.searcher();
     let agg_res: AggregationResults = searcher.search(&AllQuery, &collector).unwrap();
 
     let json_response_string = serde_json::to_string(&agg_res)?;
@@ -219,28 +248,7 @@ fn aggregate_search_all() -> tantivy::Result<()> {
 }
 
 fn aggregate_search_albums_for_artist(artist: String) -> tantivy::Result<()> {
-    let field_schema: FieldSchema = FieldSchema::new();
-
-    let index_path: &Path = Path::new(INDEX_CACHE_DIRECTORY);
-    let index: Index;
-    if index_path.exists() {
-        index = Index::open_in_dir(&index_path).ok().unwrap();
-    } else {
-        fs::create_dir(index_path).ok();
-        index = Index::create_in_dir(&index_path, field_schema.schema.clone())
-            .ok()
-            .unwrap();
-    }
-
-    // let index = Index::create_in_ram(field_schema.schema.clone());
-    let index_writer: IndexWriter = index.writer(30_000_000)?;
-
-    index_data(&field_schema, index_writer, JSON_DATA_FILE)?;
-    let reader = index
-        .reader_builder()
-        .reload_policy(tantivy::ReloadPolicy::OnCommit)
-        .try_into()
-        .unwrap();
+    let (field_schema, searcher, index, _) = setup()?;
 
     // start aggregate search
     // query for the specific artist here `artist`
@@ -249,21 +257,34 @@ fn aggregate_search_albums_for_artist(artist: String) -> tantivy::Result<()> {
         .parse_query(&format!("artist:{}", &artist))
         .unwrap();
 
-    let sub_aggregation: Aggregations = vec![(
-        "track_bucket".to_string(),
-        Aggregation::Bucket(BucketAggregation {
-            bucket_agg: BucketAggregationType::Terms(TermsAggregation {
-                field: "track".to_string(),
-                size: Some(50),
-                order: Some(CustomOrder {
-                    target: OrderTarget::Key,
-                    order: tantivy::aggregation::bucket::Order::Desc,
+    let sub_aggregation: Aggregations = vec![
+        (
+            "title_bucket".to_string(),
+            Aggregation::Bucket(BucketAggregation {
+                bucket_agg: BucketAggregationType::Terms(TermsAggregation {
+                    field: "title".to_string(),
+                    size: Some(50),
+                    order: Some(CustomOrder {
+                        target: OrderTarget::Key,
+                        order: tantivy::aggregation::bucket::Order::Desc,
+                    }),
+                    ..Default::default()
                 }),
-                ..Default::default()
+                sub_aggregation: Default::default(),
             }),
-            sub_aggregation: Default::default(),
-        }),
-    )]
+        ),
+        (
+            "year_bucket".to_string(),
+            Aggregation::Bucket(BucketAggregation {
+                bucket_agg: BucketAggregationType::Histogram(HistogramAggregation {
+                    field: "year".to_string(),
+                    interval: 1.0,
+                    ..Default::default()
+                }),
+                sub_aggregation: Default::default(),
+            }),
+        ),
+    ]
     .into_iter()
     .collect();
 
@@ -286,7 +307,6 @@ fn aggregate_search_albums_for_artist(artist: String) -> tantivy::Result<()> {
     .collect();
 
     let collector = AggregationCollector::from_aggs(aggregate_request);
-    let searcher = reader.searcher();
     let agg_res: AggregationResults = searcher.search(&query, &collector).unwrap();
 
     let json_response_string = serde_json::to_string(&agg_res)?;
@@ -298,32 +318,8 @@ fn aggregate_search_albums_for_artist(artist: String) -> tantivy::Result<()> {
 }
 
 fn aggregate_search() -> tantivy::Result<()> {
-    let field_schema: FieldSchema = FieldSchema::new();
+    let (field_schema, searcher, index, _) = setup()?;
 
-    let index_path: &Path = Path::new(INDEX_CACHE_DIRECTORY);
-    let index: Index;
-    if index_path.exists() {
-        index = Index::open_in_dir(&index_path).ok().unwrap();
-    } else {
-        fs::create_dir(index_path).ok();
-        index = Index::create_in_dir(&index_path, field_schema.schema.clone())
-            .ok()
-            .unwrap();
-    }
-
-    // let index = Index::create_in_ram(field_schema.schema.clone());
-    let index_writer: IndexWriter = index.writer(30_000_000)?;
-
-    index_data(&field_schema, index_writer, JSON_DATA_FILE)?;
-    let reader = index
-        .reader_builder()
-        .reload_policy(tantivy::ReloadPolicy::OnCommit)
-        .try_into()
-        .unwrap();
-
-    // start aggregate search
-
-    // ideally we'd be able to filter by top level facet types here
     let aggregate_request: Aggregations = vec![
         (
             "album_bucket".to_string(),
@@ -370,12 +366,22 @@ fn aggregate_search() -> tantivy::Result<()> {
                 sub_aggregation: Default::default(),
             }),
         ),
+        (
+            "year_bucket".to_string(),
+            Aggregation::Bucket(BucketAggregation {
+                bucket_agg: BucketAggregationType::Histogram(HistogramAggregation {
+                    field: "year".to_string(),
+                    interval: 1.0,
+                    ..Default::default()
+                }),
+                sub_aggregation: Default::default(),
+            }),
+        ),
     ]
     .into_iter()
     .collect();
 
     let collector = AggregationCollector::from_aggs(aggregate_request);
-    let searcher = reader.searcher();
 
     // query for the specific artist here `artist`
     let query_parser = QueryParser::for_index(
@@ -388,8 +394,8 @@ fn aggregate_search() -> tantivy::Result<()> {
         ],
     );
     let query = query_parser.parse_query("*").unwrap();
-    let top_docs = searcher.search(&query, &TopDocs::with_limit(200))?;
-    // println!("top_docs {:?}", &top_docs);
+    let count = searcher.search(&query, &Count).unwrap();
+    println!("{} total items", count);
 
     let agg_res: AggregationResults = searcher.search(&query, &collector).unwrap();
 
@@ -461,28 +467,7 @@ fn watch_search() {
 }
 
 fn search_by_genre(genre: String) -> tantivy::Result<()> {
-    let field_schema: FieldSchema = FieldSchema::new();
-
-    let index_path: &Path = Path::new(INDEX_CACHE_DIRECTORY);
-    let index: Index;
-    if index_path.exists() {
-        index = Index::open_in_dir(&index_path).ok().unwrap();
-    } else {
-        fs::create_dir(index_path).ok();
-        index = Index::create_in_dir(&index_path, field_schema.schema.clone())
-            .ok()
-            .unwrap();
-    }
-
-    // let index = Index::create_in_ram(field_schema.schema.clone());
-    let index_writer: IndexWriter = index.writer(30_000_000)?;
-
-    index_data(&field_schema, index_writer, JSON_DATA_FILE)?;
-    let reader = index
-        .reader_builder()
-        .reload_policy(tantivy::ReloadPolicy::OnCommit)
-        .try_into()
-        .unwrap();
+    let (field_schema, searcher, index, _) = setup()?;
 
     // start aggregate search
 
@@ -535,7 +520,6 @@ fn search_by_genre(genre: String) -> tantivy::Result<()> {
         IndexRecordOption::Basic,
     );
 
-    let searcher = reader.searcher();
     let top_docs = searcher.search(&query, &TopDocs::with_limit(200))?;
     // println!("top_docs {:?}", &top_docs);
 
@@ -549,7 +533,6 @@ fn search_by_genre(genre: String) -> tantivy::Result<()> {
     }
 
     let collector = AggregationCollector::from_aggs(aggregate_request);
-    let searcher = reader.searcher();
     let agg_res: AggregationResults = searcher.search(&query, &collector).unwrap();
 
     let json_response_string = serde_json::to_string(&agg_res)?;
@@ -562,29 +545,7 @@ fn search_by_genre(genre: String) -> tantivy::Result<()> {
 
 fn search() -> tantivy::Result<()> {
     let start = SystemTime::now();
-
-    let field_schema: FieldSchema = FieldSchema::new();
-
-    let index_path: &Path = Path::new(INDEX_CACHE_DIRECTORY);
-    let index: Index;
-    if index_path.exists() {
-        index = Index::open_in_dir(&index_path).ok().unwrap();
-    } else {
-        fs::create_dir(index_path).ok();
-        index = Index::create_in_dir(&index_path, field_schema.schema.clone())
-            .ok()
-            .unwrap();
-    }
-
-    // let index = Index::create_in_ram(field_schema.schema.clone());
-    let index_writer: IndexWriter = index.writer(30_000_000)?;
-
-    index_data(&field_schema, index_writer, JSON_DATA_FILE)?;
-    let reader = index
-        .reader_builder()
-        .reload_policy(tantivy::ReloadPolicy::OnCommit)
-        .try_into()
-        .unwrap();
+    let (field_schema, searcher, index, reader) = setup()?;
 
     // Query Variables (will be passed to the method from a FE interface of some sort)
     let text = "Eminem".to_string();
