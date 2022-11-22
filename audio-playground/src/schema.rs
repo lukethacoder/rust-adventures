@@ -16,12 +16,12 @@ use crate::utils::{
     ALLOWED_FILE_TYPES,
 };
 use audiotags::AudioTag;
-use chrono::{DateTime, NaiveDateTime, Utc};
 use id3::TagLike;
 use jwalk::DirEntry;
 use jwalk::WalkDir;
 use serde::{Deserialize, Serialize};
 use slug::slugify;
+use tantivy::aggregation::agg_result::BucketEntry;
 use tantivy::collector::Count;
 use tantivy::collector::FacetCollector;
 use tantivy::collector::MultiCollector;
@@ -29,7 +29,6 @@ use tantivy::collector::TopDocs;
 use tantivy::query::AllQuery;
 use tantivy::query::Query;
 use tantivy::query::QueryParser;
-use tantivy::schema::TEXT;
 use tantivy::time::PrimitiveDateTime;
 use tantivy::{
     collector::FacetCounts,
@@ -807,4 +806,11 @@ pub struct SearchResponse<'a, S> {
     pub order_by: Option<OrderBy>,
     pub page_number: i32,
     pub results_per_page: i32,
+}
+
+#[derive(Serialize, Deserialize, Default, Debug, Clone, PartialEq)]
+pub struct TheRealBucket {
+    pub buckets: Vec<BucketEntry>,
+    pub sum_other_doc_count: i32,
+    pub doc_count_error_upper_bound: i32,
 }

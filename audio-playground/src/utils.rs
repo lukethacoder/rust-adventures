@@ -1,8 +1,13 @@
 use std::collections::HashMap;
 
-use crate::schema::{FacetResult, FacetResults, FieldSchema, OrderBy};
+use crate::schema::{FacetResult, FacetResults, FieldSchema, OrderBy, TheRealBucket};
 use regex::Regex;
-use tantivy::{collector::FacetCounts, query::QueryParser, schema::Facet};
+use tantivy::{
+    aggregation::agg_result::{AggregationResult, AggregationResults},
+    collector::FacetCounts,
+    query::QueryParser,
+    schema::Facet,
+};
 
 pub const ALLOWED_FILE_TYPES: [&str; 5] = ["mp3", "m4a", "mp4", "flac", "wav"];
 
@@ -132,6 +137,16 @@ pub fn subs(str: &str) -> Vec<String> {
             .collect();
     }
     vec![]
+}
+
+pub fn aggregate_to_bucket(
+    aggregate_res: AggregationResults,
+    bucket_key: &'static str,
+) -> TheRealBucket {
+    let artist_result: HashMap<std::string::String, AggregationResult> = aggregate_res.0;
+
+    let buckets = serde_json::to_string(&artist_result.get(bucket_key).unwrap()).unwrap();
+    serde_json::from_str(&buckets).unwrap()
 }
 
 const ID3V1_GENRES: [&str; 192] = [

@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fs;
 use std::fs::read_to_string;
 use std::io;
@@ -13,7 +14,9 @@ use std::os::windows::fs::MetadataExt;
 use tantivy::aggregation::agg_req::{
     Aggregation, Aggregations, BucketAggregation, BucketAggregationType,
 };
-use tantivy::aggregation::agg_result::AggregationResults;
+use tantivy::aggregation::agg_result::{
+    AggregationResult, AggregationResults, BucketEntry, BucketResult,
+};
 use tantivy::aggregation::bucket::{
     CustomOrder, HistogramAggregation, OrderTarget, TermsAggregation,
 };
@@ -32,10 +35,10 @@ mod utils;
 use crate::reader::{get_duration_for_path, get_track_from_path};
 use crate::schema::{
     DocumentSearchRequest, DocumentSearchResponse, Faceted, FieldSchema, Filters, OrderBy,
-    OrderType, SearchWatcher, TrackJson,
+    OrderType, SearchWatcher, TheRealBucket, TrackJson,
 };
 use crate::search_query::do_search;
-use crate::utils::{file_ext, norm, ALLOWED_FILE_TYPES};
+use crate::utils::{aggregate_to_bucket, file_ext, norm, ALLOWED_FILE_TYPES};
 
 const JSON_DATA_FILE: &str = "./data/audio.json";
 
@@ -69,12 +72,16 @@ fn main() -> tantivy::Result<()> {
         aggregate_search()?;
     }
 
-    if true {
+    if false {
         aggregate_search_albums_for_artist("Trivium".to_string())?;
     }
 
     if false {
-        aggregate_search_all()?
+        aggregate_search_all()?;
+    }
+
+    if true {
+        artists_all()?;
     }
 
     Ok(())
@@ -539,6 +546,38 @@ fn search_by_genre(genre: String) -> tantivy::Result<()> {
 
     println!("all artists");
     println!("{}", json_response_string);
+
+    Ok(())
+}
+
+fn artists_all() -> tantivy::Result<()> {
+    let (field_schema, searcher, index, _) = setup()?;
+
+    // start aggregate search
+
+    let aggregate_request: Aggregations = vec![(
+        "artist_bucket".to_string(),
+        Aggregation::Bucket(BucketAggregation {
+            bucket_agg: BucketAggregationType::Terms(TermsAggregation {
+                field: "artist".to_string(),
+                size: Some(1000),
+                ..Default::default()
+            }),
+            sub_aggregation: Default::default(),
+        }),
+    )]
+    .into_iter()
+    .collect();
+
+    let collector = AggregationCollector::from_aggs(aggregate_request);
+    let agg_res: AggregationResults = searcher.search(&AllQuery, &collector).unwrap();
+
+    let the_real_bucket: TheRealBucket = aggregate_to_bucket(agg_res, "artist_bucket");
+
+    let json_response_string = serde_json::to_string(&the_real_bucket.buckets).unwrap();
+
+    println!("all artists");
+    println!("{}\n", json_response_string);
 
     Ok(())
 }
